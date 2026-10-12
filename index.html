@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ALO KPI Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+:root{
+  --bg:#FFFFFF; --soft:#F7F7F6; --ink:#1C1C1A; --muted:#76766F; --faint:#A8A8A0; --line:#EAEAE6;
+  --accent:#3D4ED8; --accent-soft:#EEF0FD; --e:#C2410C; --b:#0F7C86; --c:#8A8A82; --focus:#3D4ED8;
+  --mR:#2F5BD3; --mC:#B7791F; --mU:#2F855A; --mP:#7B4FC4; --op:#C2410C; --head:#3D4ED8;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141413; --soft:#1C1C1A; --ink:#ECECE8; --muted:#9A9A92; --faint:#6A6A64; --line:#2A2A27;
+  --accent:#8C98F5; --accent-soft:#22253D; --e:#F0A06A; --b:#4FC3CC; --c:#9A9A92; --focus:#8C98F5;
+  --mR:#8EA8F5; --mC:#E3B45A; --mU:#6CC79A; --mP:#B79AEC; --op:#F0A06A; --head:#A3ADF7;}}
+:root[data-theme="dark"]{
+  --bg:#141413; --soft:#1C1C1A; --ink:#ECECE8; --muted:#9A9A92; --faint:#6A6A64; --line:#2A2A27;
+  --accent:#8C98F5; --accent-soft:#22253D; --e:#F0A06A; --b:#4FC3CC; --c:#9A9A92; --focus:#8C98F5;
+  --mR:#8EA8F5; --mC:#E3B45A; --mU:#6CC79A; --mP:#B79AEC; --op:#F0A06A; --head:#A3ADF7;}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:calc(var(--hh,200px) + 12px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.55 "Geist",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Geist Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+
+.intro{padding-top:18px;padding-bottom:12px}
+.top{position:sticky;top:0;z-index:6;background:var(--bg);padding-top:env(safe-area-inset-top,0px)}
+h1{font-size:26px!important}
+h1{margin:0;font-weight:500;font-size:30px;letter-spacing:-.02em}
+.intro p{margin:8px 0 0;color:var(--muted);max-width:68ch}
+.legend{display:flex;flex-wrap:wrap;gap:10px 26px;margin-top:14px;font-size:13px;color:var(--muted)}
+.legend .lg{display:inline-flex;align-items:center;gap:8px}
+
+.bar{background:var(--bg);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;gap:12px;align-items:center;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}
+.search{flex:0 1 220px;min-width:150px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:7px 11px}
+.seg{display:inline-flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--bg);padding:6px 12px;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer;border-radius:6px;box-shadow:0 1px 0 rgba(0,0,0,.06);transition:background .12s,border-color .12s}
+.seg button:hover{border-color:var(--faint)}
+.seg button[aria-pressed="true"]{color:#fff;font-weight:600;box-shadow:none}
+#mode button[aria-pressed="true"]{background:#4B5563;border-color:#4B5563}
+#mode button[data-v="E"]{color:var(--e)} #mode button[data-v="B"]{color:var(--b)} #mode button[data-v="C"]{color:var(--c)}
+#mode button[data-v="E"][aria-pressed="true"]{background:var(--e);border-color:var(--e);color:#fff}
+#mode button[data-v="B"][aria-pressed="true"]{background:var(--b);border-color:var(--b);color:#fff}
+#mode button[data-v="C"][aria-pressed="true"]{background:var(--c);border-color:var(--c);color:#fff}
+#orig button[aria-pressed="true"]{background:#4B5563;border-color:#4B5563}
+#orig button[data-v="Standard"]{color:var(--ink)} #orig button[data-v="Standard"][aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+#orig button[data-v="ALO"]{color:#1E7A46} #orig button[data-v="ALO"][aria-pressed="true"]{background:#1E7A46;border-color:#1E7A46;color:#fff}
+#demo button[aria-pressed="true"]{background:#4B5563;border-color:#4B5563}
+#demo button[data-v="1"]{color:#C62828} #demo button[data-v="1"][aria-pressed="true"]{background:#C62828;border-color:#C62828;color:#fff}
+.spacer{flex:1}
+.lnk{border:0;background:none;color:var(--muted);font-size:13px;cursor:pointer;padding:4px}
+.lnk:hover{color:var(--ink)}
+.allbtn{border:1px solid var(--head);background:var(--bg);color:var(--head);border-radius:6px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.allbtn:hover{background:var(--accent-soft)}
+.allbtn.on{background:var(--head);color:#fff}
+.count{font-size:13px;color:var(--muted);white-space:nowrap}
+.count b{color:var(--ink);font-weight:600}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:6px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+
+.layout{display:grid;grid-template-columns:190px 1fr;gap:40px;padding:28px 0 80px}
+nav.toc{position:sticky;top:calc(var(--hh,200px) + 16px);align-self:start;font-size:13px;max-height:calc(100vh - var(--hh,200px) - 32px);overflow-y:auto}
+nav.toc a{display:flex;justify-content:space-between;color:var(--muted);text-decoration:none;padding:5px 0}
+nav.toc a:hover{color:var(--ink)}
+nav.toc a span{color:var(--faint)}
+.key{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px;line-height:1.5}
+.key div{margin:0 0 10px}
+.key b{font-weight:500;color:var(--ink)}
+
+section.cat{margin:0 0 44px}
+section.cat>h2{font-size:21px;font-weight:600;letter-spacing:-.01em;margin:0 0 6px;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+.fam{border-top:1px solid var(--line);padding:16px 0 8px}
+.famhead{display:flex;align-items:center;gap:10px;margin:0 0 4px}
+.famhead h3{margin:0;font-size:13.5px;font-weight:600;color:var(--head)}
+.famnote{margin:-2px 0 6px;font-size:12.5px;color:var(--muted);font-style:italic}
+.famhead .fambtn{margin-left:auto;border:1px solid var(--line);background:var(--bg);color:var(--head);font-size:12.5px;font-weight:600;padding:5px 12px;border-radius:6px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.famhead .fambtn:hover{border-color:var(--head)}
+.famhead .fambtn.on{background:var(--head);border-color:var(--head);color:#fff}
+.row{display:grid;grid-template-columns:22px minmax(230px,1.2fr) 96px 170px minmax(220px,1.6fr) 28px;gap:14px;align-items:baseline;padding:8px 10px;margin:0 -10px;border-radius:4px}
+.row:hover{background:var(--soft)}
+.kpi.on .row{background:var(--accent-soft)}
+.ai{font-size:12.5px} .aiy{display:inline-block;background:#E6F4EA;color:#1E6B3A;border:1px solid #A8D5B5;border-radius:999px;padding:1px 9px;font-weight:600} .ain{color:var(--faint)} .aily{display:inline-block;background:#EAF0FD;color:#2F5BD3;border:1px solid #BCCBF5;border-radius:999px;padding:1px 9px;font-weight:600;white-space:nowrap}
+.colhead{display:grid;grid-template-columns:22px minmax(230px,1.2fr) 96px 170px minmax(220px,1.6fr) 28px;gap:14px;padding:0 10px 6px;margin:0 -10px 10px;font-size:13.5px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);position:sticky;top:var(--hh,200px);background:var(--bg);z-index:3;padding-top:8px}
+.row input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;transform:translateY(2px)}
+.nm{font-weight:650;font-size:14.5px}
+.nm small{color:var(--faint);font-weight:400;margin-left:6px;font-size:12.5px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center}
+.tg{font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:999px;border:1px solid currentColor;line-height:1.5}
+.tg.R{color:var(--mR)} .tg.C{color:var(--mC)} .tg.U{color:var(--mU)} .tg.P{color:var(--mP)} .tg.N{color:var(--muted)}
+.tg.alo{background:#1E7A46;color:#fff;border-color:#1E7A46} .tg.demo{background:#C62828;color:#fff;border-color:#C62828} .tg.std{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.aloid{font-size:12px;color:var(--muted)} .aloid b{font-weight:600;color:#9A3412}
+.tg.core{background:var(--ink);color:var(--bg);border-color:var(--ink)} .tg.opt{color:var(--muted);border-color:var(--line);font-weight:500}
+.seed{font-size:12px;color:var(--muted)} .seed b{font-weight:600;color:var(--ink)}
+.fx .o{color:var(--op);font-weight:600}
+.msr{color:var(--muted);font-size:12.5px}
+.mode{font-size:12.5px;font-weight:600}
+.mode.E{color:var(--e)} .mode.B{color:var(--b)} .mode.C{color:var(--c)}
+.mode::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;transform:translateY(-1px)}
+.fx{color:var(--ink);overflow-wrap:anywhere}
+.tog{width:26px;height:26px;border:1.5px solid var(--head);background:var(--bg);color:var(--head);border-radius:50%;cursor:pointer;padding:0;font-size:18px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.tog:hover{background:var(--accent-soft)}
+.tog[aria-expanded="true"]{background:var(--head);color:#fff}
+.detail{display:none;grid-template-columns:1fr 1fr;gap:28px;padding:6px 0 18px 36px}
+.kpi.open .detail{display:grid}
+.detail h4{margin:0 0 4px;font-size:12px;font-weight:600;color:var(--head)}
+.detail p{margin:0 0 14px;max-width:62ch}
+.detail ul{margin:0 0 14px;padding-left:16px}
+.detail li{margin:0 0 4px}
+.inlist{list-style:none;padding:0;margin:0 0 14px;font-size:13px}
+.inlist li{padding:3px 0 3px 12px;border-left:2px solid var(--line);margin:0}
+.inlist li span{color:var(--muted);font-size:12px;margin-left:6px}
+.note{background:var(--accent-soft);border-radius:4px;padding:6px 10px;font-size:12.5px;margin:0 0 14px;max-width:62ch}
+.chips{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+.ex{border-left:2px solid var(--line);padding:2px 0 2px 14px;max-width:420px}
+.ex .ln{display:grid;grid-template-columns:14px 1fr auto;gap:8px;padding:2px 0}
+.ex .op{color:var(--op);font-weight:700;font-size:15px}
+.ex .v{text-align:right}
+.ex .tot{border-top:1px solid var(--ink);margin-top:4px;padding-top:5px;font-weight:500}
+.ex .tot.neg{color:#C53030}
+.empty{color:var(--muted);padding:40px 0}
+.toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;gap:0}
+  nav.toc{display:none}
+  .row{grid-template-columns:22px 1fr 20px}
+  .row .ai{grid-column:2}
+  .colhead{display:none}
+  .row .mode{grid-column:2}
+  .row .fx{grid-column:2}
+  .detail{grid-template-columns:1fr;padding-left:22px}
+  .wrap{padding:0 18px}
+}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+.btn.sim{background:var(--bg);color:var(--head);border-color:var(--head)}
+.btn.sim:not(:disabled):hover{background:var(--accent-soft)}
+.simwrap{position:fixed;inset:0;z-index:50;background:rgba(20,20,19,.45);display:none;padding:calc(env(safe-area-inset-top,0px) + 24px) 24px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.simwrap.open{display:block}
+.simbox{background:var(--bg);border-radius:10px;max-width:1240px;height:100%;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.simhead{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.simhead h2{margin:0;font-size:19px;font-weight:600}
+.simhead p{margin:0;color:var(--muted);font-size:13px;flex:1}
+.simbody{display:grid;grid-template-columns:minmax(300px,0.9fr) 1.4fr;gap:0;flex:1;min-height:0}
+.simcol{overflow:auto;padding:14px 20px}
+.simcol+.simcol{border-left:1px solid var(--line)}
+.simcol h3{margin:4px 0 10px;font-size:13.5px;font-weight:700;color:var(--head)}
+.sin{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.sin label{font-size:13px}
+.sin label small{display:block;color:var(--faint);font-size:11.5px}
+.sin input{width:100%;border:1px solid #9DB0F0;background:#EEF2FE;color:#2B3BB8;font-weight:600;border-radius:6px;padding:6px 8px;text-align:right;font:600 13px "Geist Mono",ui-monospace,monospace}
+.sin input.chg{background:#FFF4D6;border-color:#E9B949;color:#8A5300}
+.sout{width:100%;border-collapse:collapse;font-size:13px}
+.sout th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg)}
+.sout td{padding:6px 8px;border-bottom:1px solid var(--line)}
+.sout td .mode{white-space:nowrap;font-size:12px}
+.sout td.num{text-align:right;font-family:"Geist Mono",ui-monospace,monospace}
+.sout tr.sup td{color:var(--muted)}
+.sout tr.moved td.num.now{background:#FFF4D6;font-weight:700}
+.dlt.up{color:#1E7A46} .dlt.dn{color:#C62828}
+@media (max-width:900px){.simbody{grid-template-columns:1fr}.simcol+.simcol{border-left:0;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header class="top" id="top"><div class="wrap intro">
+  <h1>ALO KPI Library</h1>
+  <div class="legend">
+    <span class="lg"><span class="tg std">Standard</span> Industry-standard MFP KPI</span>
+    <span class="lg"><span class="tg alo">ALO Specific</span> Alo Yoga Custom</span>
+    <span class="lg"><span class="tg demo">Missing from Demo</span> Not available in the current demo environment, per the ALO demo gaps and hands-on prep</span>
+  </div>
+  </div>
+<div class="bar"><div class="wrap">
+  <input class="search" id="q" type="search" placeholder="Search KPIs or formulas" aria-label="Search KPIs">
+  <div class="seg" id="mode" role="group" aria-label="Edit mode"></div>
+  <div class="seg" id="orig" role="group" aria-label="Origin"></div>
+  <div class="seg" id="demo" role="group" aria-label="Demo call-outs"></div>
+  <button class="allbtn" id="selAll">Select all KPIs</button>
+  <button class="lnk" id="selVis">Select shown</button>
+  <button class="lnk" id="clr">Clear</button>
+  <span class="spacer"></span>
+  <span class="count" aria-live="polite">Showing <b id="nVis">0</b> of <b id="nTot">0</b> KPIs, <b id="nSel">0</b> selected</span>
+  <button class="btn sim" id="simBtn" disabled>Live simulation</button>
+  <button class="btn" id="dl" disabled>Download Excel</button>
+</div></div></header>
+<div class="wrap layout">
+  <nav class="toc" aria-label="Categories">
+    <div id="toc"></div>
+    <div class="key">
+      <div><span class="mode E">Editable</span><br>Planner enters it; nothing calculates it.</div>
+      <div><span class="mode B">Editable + Calculated</span><br>Calculates from other measures, and planners can also enter it, which back-solves the related measures.</div>
+      <div><span class="mode C">Calculated</span><br>Always derived; read-only.</div>
+      <div>AI Forecast column: <span class="aiy">Yes</span> seeded from the AI forecast; <span class="aily">LY Seeded</span> seeded from last year.</div>
+      <div>Worked examples use one class over a 4-week month, so every result reconciles.</div>
+    </div>
+  </nav>
+  <main><div class="colhead"><span></span><span>KPI</span><span>AI Forecast</span><span>Edit mode</span><span>Formula</span><span></span></div><div id="list"></div></main>
+</div>
+<div class="simwrap" id="simWrap" role="dialog" aria-modal="true" aria-labelledby="simTitle">
+  <div class="simbox">
+    <div class="simhead"><h2 id="simTitle">Live simulation</h2><p>Change any blue input; every selected KPI recalculates instantly. Changed inputs and moved KPIs are highlighted.</p>
+      <button class="lnk" id="simReset">Reset inputs</button><button class="btn" id="simClose">Close</button></div>
+    <div class="simbody"><div class="simcol"><h3>Inputs</h3><div id="simIn"></div></div>
+      <div class="simcol"><h3>KPIs</h3><table class="sout"><thead><tr><th>KPI</th><th>Edit mode</th><th style="text-align:right">Base</th><th style="text-align:right">Simulated</th><th style="text-align:right">Change</th></tr></thead><tbody id="simOut"></tbody></table></div></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+/* ===== base scenario: one class, one 4-week month ===== */
+const V = {
+  netSalesR:340000, aucIn:8.40, returnsR:20000, rtnPct:1/18, mdTotPct:2/17, shrinkPctIn:0.02, returnsU:1000, salesU:17000,
+  bopR:1000000, bopC:420000, bopU:50000,
+  rcptR:300000, rcptC:123000, rcptU:14000,
+  markupR:0,
+  mdPosR:25000, mdPermR:15000, shrinkR:6800, shrinkU:340,
+  onOrderR:120000, onOrderC:48000, onOrderU:5600, ooAdjR:-5000, ooAdjC:-2000, ooAdjU:-230, rcptTdR:60000, rcptTdC:24600, rcptTdU:2800, opRcptR:320000, opRcptC:131200, opRcptU:15000, priorCumOtbR:-12000,
+  lySalesR:310000, lySalesU:16000, opSalesR:330000, compSalesR:300000, lyCompSalesR:285000,
+  storeCount:50, sqft:150000, parentSalesR:1700000, prevWkSalesR:80000, curWkSalesR:88000, weeks:4,
+  eopActualR:909000,
+  fwdSalesR:1105000, fwdSalesU:55000, fwosWeeks:13, tgtWos:10,
+  fwdWeekly:[88000,90000,92000,95000,98000,100000,102000,105000,108000,110000,112000,115000,118000],
+  fm1S:360000, fm1W:4, fm2S:420000, fm2W:5, fm3S:380000, fm3W:4
+};
+
+/* ===== raw data inputs ===== */
+const INPUTS = {
+  netSalesR:{n:"Net Sales $",d:"Sales at selling price net of customer returns.",t:"Actuals / Plan",s:"POS sales",g:"Class x Week x Location",u:"$"},
+  aucIn:{n:"Average Unit Cost (seeded)",d:"Unit cost seeded from LY or the forecast; for actuals, cost of sales ÷ units from the sales feed.",t:"LY / Forecast seed",s:"Cost of sales feed / LY / forecast",g:"Class x Week",u:"$"},
+  rtnPct:{n:"Returns % (Units)",d:"Planned returns rate on units sold before returns; seeded from LY.",t:"Plan entry (seeded LY)",s:"LY returns rate",g:"Channel x Subcategory x Week",u:"%"},
+  mdTotPct:{n:"Total Markdown %",d:"Planned markdown rate on net sales; seeded from LY.",t:"Plan entry (seeded LY)",s:"LY markdown rate",g:"Channel x Subcategory x Week",u:"%"},
+  shrinkPctIn:{n:"Shrink %",d:"Planned shrink rate on net sales; seeded from LY.",t:"Plan entry (seeded LY)",s:"LY shrink rate",g:"Channel x Subcategory x Week",u:"%"},
+  returnsR:{n:"Returns $",d:"Customer returns at retail value.",t:"Actuals",s:"POS sales (negative lines)",g:"Class x Week x Location",u:"$"},
+  returnsU:{n:"Returns Units",d:"Units returned by customers.",t:"Actuals",s:"POS sales (negative lines)",g:"Class x Week x Location",u:"U"},
+  salesU:{n:"Net Sales Units",d:"Units sold net of returns.",t:"Actuals / Plan",s:"POS sales",g:"Class x Week x Location",u:"U"},
+  bopR:{n:"BOP Inventory $",d:"Opening stock at retail; equals prior period EOP.",t:"Actuals",s:"Inventory snapshot",g:"Class x Week x Location",u:"$"},
+  bopC:{n:"BOP Inventory Cost $",d:"Opening stock at cost.",t:"Actuals",s:"Inventory snapshot / stock ledger",g:"Class x Week x Location",u:"$"},
+  bopU:{n:"BOP Inventory Units",d:"Opening stock units.",t:"Actuals",s:"Inventory snapshot",g:"Class x Week x Location",u:"U"},
+  rcptR:{n:"Receipts $",d:"Goods received (actual) or planned, at retail.",t:"Actuals / Plan",s:"PO receipts",g:"Class x Week x Location",u:"$"},
+  rcptC:{n:"Receipts Cost $",d:"Goods received at landed cost.",t:"Actuals / Plan",s:"PO receipts",g:"Class x Week x Location",u:"$"},
+  rcptU:{n:"Receipts Units",d:"Units received.",t:"Actuals / Plan",s:"PO receipts",g:"Class x Week x Location",u:"U"},
+  markupR:{n:"Markup $ (price increases)",d:"Retail value added by upward price changes.",t:"Actuals",s:"Price changes",g:"Class x Week",u:"$"},
+  mdPosR:{n:"POS / Promo Markdown $",d:"Point-of-sale and promotional reductions.",t:"Actuals / Plan",s:"POS discounts",g:"Class x Week x Location",u:"$"},
+  mdPermR:{n:"Permanent Markdown $",d:"Permanent ticket price reductions on stock.",t:"Actuals / Plan",s:"Price changes / stock ledger",g:"Class x Week x Location",u:"$"},
+  shrinkR:{n:"Shrink $",d:"Inventory loss at retail.",t:"Actuals / Plan",s:"Waste feed",g:"Class x Week x Location",u:"$"},
+  shrinkU:{n:"Shrink Units",d:"Inventory loss in units.",t:"Actuals / Plan",s:"Inventory adjustments / counts",g:"Class x Week x Location",u:"U"},
+  onOrderR:{n:"On Order $",d:"Open PO quantity x unit retail by expected receipt week.",t:"Actuals",s:"Purchase orders",g:"Class x Week",u:"$"},
+  onOrderC:{n:"On Order Cost $",d:"Open PO quantity x unit cost.",t:"Actuals",s:"Purchase orders",g:"Class x Week",u:"$"},
+  onOrderU:{n:"On Order Units",d:"Open PO quantity.",t:"Actuals",s:"Purchase orders",g:"Class x Week",u:"U"},
+  ooAdjR:{n:"On Order Adjustment $",d:"Planner adjustment for chases (+) or cancellations (−).",t:"Plan entry",s:"Planner entry",g:"Class x Week",u:"$"},
+  ooAdjC:{n:"On Order Adjustment Cost $",d:"Cost value of the on-order adjustment.",t:"Plan entry",s:"Planner entry",g:"Class x Week",u:"$"},
+  ooAdjU:{n:"On Order Adjustment Units",d:"Units value of the on-order adjustment.",t:"Plan entry",s:"Planner entry",g:"Class x Week",u:"U"},
+  rcptTdR:{n:"Receipts To-Date $",d:"Receipts already landed (actualized) in the open period; zero for future periods.",t:"Actuals",s:"PO receipts",g:"Class x Week",u:"$"},
+  opRcptR:{n:"OP Receipts $",d:"Receipts in the approved finance budget (OP).",t:"Plan version",s:"Approved OP",g:"Class x Week",u:"$"},
+  opRcptC:{n:"OP Receipts Cost $",d:"OP receipts at cost.",t:"Plan version",s:"Approved OP",g:"Class x Week",u:"$"},
+  opRcptU:{n:"OP Receipts Units",d:"OP receipts in units.",t:"Plan version",s:"Approved OP",g:"Class x Week",u:"U"},
+  rcptTdC:{n:"Receipts To-Date Cost $",d:"Cost of receipts already landed in the open period.",t:"Actuals",s:"PO receipts",g:"Class x Week",u:"$"},
+  rcptTdU:{n:"Receipts To-Date Units",d:"Units already received in the open period.",t:"Actuals",s:"PO receipts",g:"Class x Week",u:"U"},
+  priorCumOtbR:{n:"Prior Periods Cumulative OTB $",d:"Unspent (+) or overspent (−) OTB carried in from earlier periods, where the business rolls OTB forward.",t:"Calculated history",s:"Prior period OTB",g:"Class x Month",u:"$"},
+  lySalesR:{n:"LY Net Sales $",d:"Last-year sales for the mapped fiscal weeks.",t:"History",s:"Sales history + week mapping",g:"Class x Week",u:"$"},
+  lySalesU:{n:"LY Net Sales Units",d:"Last-year units for the mapped fiscal weeks.",t:"History",s:"Sales history + week mapping",g:"Class x Week",u:"U"},
+  opSalesR:{n:"Original Plan Sales $",d:"Pre-season approved plan sales.",t:"Plan version",s:"Approved plan",g:"Class x Week",u:"$"},
+  compSalesR:{n:"Comp Store Sales $",d:"Sales of stores flagged comparable.",t:"Actuals",s:"POS + store comp flag",g:"Class x Week x Location",u:"$"},
+  lyCompSalesR:{n:"LY Comp Store Sales $",d:"Last-year sales for the same comp store set.",t:"History",s:"POS + store comp flag",g:"Class x Week x Location",u:"$"},
+  storeCount:{n:"Active Store Count",d:"Stores open (and stocked) in the period.",t:"Master data",s:"Store master",g:"Week x Location group",u:"#"},
+  sqft:{n:"Selling Square Feet",d:"Selling space of the stores in scope.",t:"Master data",s:"Store master",g:"Store",u:"#"},
+  parentSalesR:{n:"Parent-level Net Sales $",d:"Sales of the parent hierarchy node, for mix.",t:"Aggregated",s:"Hierarchy roll-up",g:"Parent x Week",u:"$"},
+  prevWkSalesR:{n:"Prior Week Net Sales $",d:"Net sales of the preceding week.",t:"Actuals / Plan",s:"POS sales",g:"Class x Week",u:"$"},
+  curWkSalesR:{n:"Current Week Net Sales $",d:"Net sales of the current week.",t:"Actuals / Plan",s:"POS sales",g:"Class x Week",u:"$"},
+  weeks:{n:"Weeks in Period",d:"Fiscal weeks in the reported period.",t:"Calendar",s:"Fiscal calendar (4-5-4)",g:"Period",u:"#"},
+  eopActualR:{n:"Book EOP Inventory $",d:"Ending inventory loaded from the stock ledger.",t:"Actuals",s:"Inventory snapshot",g:"Class x Week x Location",u:"$"},
+  fwdSalesR:{n:"Forward Planned Sales $ (N weeks)",d:"Planned sales for the next N weeks.",t:"Plan version",s:"Working plan",g:"Class x Week",u:"$"},
+  fwdSalesU:{n:"Forward Planned Sales Units (N weeks)",d:"Planned units for the next N weeks.",t:"Plan version",s:"Working plan",g:"Class x Week",u:"U"},
+  fwosWeeks:{n:"Forward Weeks Parameter (N)",d:"Future weeks averaged for forward WOS (default 13).",t:"Parameter",s:"Admin setting",g:"Global",u:"#"},
+  tgtWos:{n:"Target Weeks of Supply",d:"Weeks of future sales the ending inventory should cover.",t:"Plan entry",s:"Planner entry",g:"Class x Week",u:"#"},
+  fwdWeekly:{n:"Future Weekly Planned Sales $ (13 weeks)",d:"Week-by-week planned sales used by forward cover and target EOP.",t:"Plan version",s:"Working plan",g:"Class x Week",u:"$"},
+  fm1S:{n:"Future Month 1 Sales $",d:"Planned sales of the next fiscal month.",t:"Plan version",s:"Working plan",g:"Class x Month",u:"$"},
+  fm1W:{n:"Future Month 1 Weeks",d:"Weeks in the next fiscal month.",t:"Calendar",s:"Fiscal calendar",g:"Month",u:"#"},
+  fm2S:{n:"Future Month 2 Sales $",d:"Planned sales two months out.",t:"Plan version",s:"Working plan",g:"Class x Month",u:"$"},
+  fm2W:{n:"Future Month 2 Weeks",d:"Weeks in that fiscal month.",t:"Calendar",s:"Fiscal calendar",g:"Month",u:"#"},
+  fm3S:{n:"Future Month 3 Sales $",d:"Planned sales three months out.",t:"Plan version",s:"Working plan",g:"Class x Month",u:"$"},
+  fm3W:{n:"Future Month 3 Weeks",d:"Weeks in that fiscal month.",t:"Calendar",s:"Fiscal calendar",g:"Month",u:"#"}
+};
+
+const CATS=["Sales","Targets","Margin","Inventory","Productivity","Open to Buy"];
+const MSR={R:"Retail",C:"Cost",U:"Units",P:"Rate",N:"Count"};
+const MODE={E:"Editable",C:"Calculated",B:"Editable + Calculated"};
+const CORE={C:"Core",O:"Optional"};
+
+/* helpers used by both JS and the Excel template */
+const sum=a=>a.reduce((x,y)=>x+y,0);
+function coverWeeks(e,arr){let s=e,n=0;for(const w of arr){if(s>=w){s-=w;n++}else return n+s/w}return n}
+function firstN(n,arr){const k=Math.floor(n);let t=sum(arr.slice(0,k));if(k<arr.length)t+=(n-k)*arr[k];return t}
+
+/*
+ KPI fields: id, cat, fam (family), m (R/C/U/P), name, abbr, u (unit), mode (E/C/B),
+ desc, f (formula), alt (alternative definitions), deps, raw, c (calc), ex (example lines), x (Excel template)
+ Excel tokens: {id} = cell of input or KPI; {WK} weekly range; {WKC} weekly cumulative range; {WK1} first weekly cell
+*/
+const KPIS=[
+/* ---------------- SALES ---------------- */
+{id:"netSales",cat:"Sales",fam:"Sales Volume",m:"R",name:"Net Sales $",abbr:"Net Sls $",u:"$",mode:"B",
+ desc:"Revenue at selling price after customer returns; the anchor for every rate in the plan. Loaded for actuals; planners enter it or derive it from units × AUR.",
+ f:"Sales $ − Returns $  (plan: Net Sales Units × AUR)",alt:["Plan: (1 + Var to LY %) × LY Net Sales $"],raw:["netSalesR"],
+ c:V=>V.netSalesR, ex:V=>[["","Net sales $ (net of returns)",V.netSalesR,"$"]], x:"{netSalesR}"},
+{id:"netSalesCost",cat:"Sales",fam:"Sales Volume",m:"C",name:"Net Sales Cost $",abbr:"Net Sls C",u:"$",mode:"C",
+ desc:"Cost value of the units sold, net of returns, at the average unit cost.",
+ f:"Net Sales Units × AUC",alt:["Actuals: cost of sales from the sales feed"],deps:["netSalesU","auc"],
+ c:(V,K)=>K("netSalesU")*K("auc"), ex:(V,K)=>[["","Net sales units",K("netSalesU"),"U"],["×","AUC",K("auc"),"$u"]], x:"{netSalesU}*{auc}"},
+{id:"netSalesU",cat:"Sales",fam:"Sales Volume",m:"U",name:"Net Sales Units",abbr:"Net Sls U",u:"U",mode:"B",
+ desc:"Units sold net of returns. Loaded for actuals; in the plan it is Net Sales $ ÷ AUR.",
+ f:"Actual units sold − units returned  (plan: Net Sales $ ÷ AUR)",raw:["salesU"],
+ c:V=>V.salesU, ex:V=>[["","Units sold net of returns",V.salesU,"U"]], x:"{salesU}"},
+{id:"aur",cat:"Sales",fam:"Average Unit Retail & Cost",m:"R",name:"Sales AUR",abbr:"AUR",u:"$u",mode:"B",
+ desc:"Average selling price per unit. In planning AUR is the dominant measure: change $ and units recalculate, and vice versa.",
+ f:"Net Sales $ ÷ Net Sales Units",alt:["Also called ASP or AUSP"],raw:["netSalesR","salesU"],
+ c:V=>V.netSalesR/V.salesU, ex:V=>[["","Net sales $",V.netSalesR,"$"],["÷","Net sales units",V.salesU,"U"]], x:"{netSalesR}/{salesU}"},
+{id:"auc",cat:"Sales",fam:"Average Unit Retail & Cost",m:"C",name:"Average Unit Cost",abbr:"AUC",u:"$u",mode:"B",
+ desc:"Average cost per unit, used to value sales, returns, shrink and inventory at cost. Seeded from LY or the forecast and editable; actuals come from cost of sales ÷ units.",
+ f:"Seeded LY or Forecast  |  actuals: Net Sales Cost $ ÷ Net Sales Units",raw:["aucIn"],
+ c:V=>V.aucIn, ex:V=>[["","Seeded AUC",V.aucIn,"$u"]], x:"{aucIn}"},
+{id:"returnsUPct",cat:"Sales",fam:"Returns",m:"U",name:"Returns % (Units)",abbr:"Rtn U %",u:"%",mode:"B",
+ desc:"Share of units sold (before returns) that come back. Seeded from LY and editable; it holds when net sales change, so returns units and $ recalculate.",
+ f:"Seeded LY / entered  |  actuals: Returns Units ÷ (Net Sales Units + Returns Units)",raw:["rtnPct"],
+ c:V=>V.rtnPct, ex:V=>[["","Returns % (seeded LY)",V.rtnPct,"%"]], x:"{rtnPct}"},
+{id:"returnsK",cat:"Sales",fam:"Returns",m:"R",name:"Returns $",abbr:"Rtn $",u:"$",mode:"B",
+ desc:"Customer returns at retail. Editable; when net sales are edited, Returns % holds and Returns $ recalculates.",
+ f:"Returns Units × AUR",alt:["Actuals: Σ returns $ from the sales feed"],deps:["returnsUK","aur"],
+ c:(V,K)=>K("returnsUK")*K("aur"), ex:(V,K)=>[["","Returns units",K("returnsUK"),"U"],["×","AUR",K("aur"),"$u"]], x:"{returnsUK}*{aur}"},
+{id:"returnsUK",cat:"Sales",fam:"Returns",m:"U",name:"Returns Units",abbr:"Rtn U",u:"U",mode:"C",
+ desc:"Units returned by customers, derived from the returns rate and net sales units.",
+ f:"Returns % × Net Sales Units ÷ (1 − Returns %)",alt:["Actuals: Σ returned units from the sales feed"],deps:["returnsUPct","netSalesU"],
+ c:(V,K)=>K("returnsUPct")*K("netSalesU")/(1-K("returnsUPct")), ex:(V,K)=>[["","Returns % × net sales units",K("returnsUPct")*K("netSalesU"),"U"],["÷","1 − returns %",1-K("returnsUPct"),"%"]],
+ x:"{returnsUPct}*{netSalesU}/(1-{returnsUPct})"},
+{id:"returnsC",cat:"Sales",fam:"Returns",m:"C",name:"Returns Cost $",abbr:"Rtn C",u:"$",mode:"C",
+ desc:"Cost value of returned units.",
+ f:"Returns Units × AUC",deps:["returnsUK","auc"],
+ c:(V,K)=>K("returnsUK")*K("auc"), ex:(V,K)=>[["","Returns units",K("returnsUK"),"U"],["×","AUC",K("auc"),"$u"]], x:"{returnsUK}*{auc}"},
+{id:"totalMdPct",cat:"Sales",fam:"Markdowns",m:"P",name:"Total Markdown %",abbr:"Ttl MD %",u:"%",mode:"B",
+ desc:"Markdown rate on net sales. Seeded from LY and editable; it holds when net sales change, so Total Markdown $ recalculates.",
+ f:"Seeded LY / entered  |  actuals: Total Markdown $ ÷ Net Sales $",raw:["mdTotPct"],
+ c:V=>V.mdTotPct, ex:V=>[["","Total markdown % (seeded LY)",V.mdTotPct,"%"]], x:"{mdTotPct}"},
+{id:"totalMd",cat:"Sales",fam:"Markdowns",m:"R",name:"Total Markdown $",abbr:"Ttl MD $",u:"$",mode:"B",
+ desc:"All price reductions taken in the period. Editable; when net sales change, Total Markdown % holds and Total Markdown $ recalculates.",
+ f:"Net Sales $ × Total Markdown %",alt:["Actuals: POS / Promo Markdown $ + Permanent Markdown $","Sum of all markdown buckets: advertised promo, clearance, coupon, store POS, mark-out-of-stock, permanent"],deps:["netSales","totalMdPct"],
+ c:(V,K)=>K("netSales")*K("totalMdPct"), ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["×","Total markdown %",K("totalMdPct"),"%"]], x:"{netSales}*{totalMdPct}"},
+{id:"mdPosPct",cat:"Sales",fam:"Markdowns",m:"P",name:"POS / Promo Markdown %",abbr:"POS MD %",u:"%",mode:"B",
+ desc:"Promotional and point-of-sale markdown rate.",
+ f:"POS / Promo Markdown $ ÷ Net Sales $",deps:["netSales"],raw:["mdPosR"],
+ c:(V,K)=>V.mdPosR/K("netSales"), ex:(V,K)=>[["","POS / promo markdown $",V.mdPosR,"$"],["÷","Net sales $",K("netSales"),"$"]], x:"{mdPosR}/{netSales}"},
+{id:"mdPermPct",cat:"Sales",fam:"Markdowns",m:"P",name:"Permanent Markdown %",abbr:"Perm MD %",u:"%",mode:"B",
+ desc:"Permanent markdowns as a rate of sales.",
+ f:"Permanent Markdown $ ÷ Net Sales $",alt:["Inventory basis: Permanent Markdown $ ÷ BOP $"],deps:["netSales"],raw:["mdPermR"],
+ c:(V,K)=>V.mdPermR/K("netSales"), ex:(V,K)=>[["","Permanent markdown $",V.mdPermR,"$"],["÷","Net sales $",K("netSales"),"$"]], x:"{mdPermR}/{netSales}"},
+{id:"shrinkPctK",cat:"Sales",fam:"Shrink",m:"P",name:"Shrink %",abbr:"Shrink %",u:"%",mode:"B",core:"C",sd:"L",alo:"KPI-049-P",
+ desc:"Inventory loss as a rate of sales. Seeded from LY and editable; it holds when net sales change, so Shrink $ recalculates.",
+ f:"Seeded LY / entered  |  actuals: Shrink $ ÷ Net Sales $",raw:["shrinkPctIn"],
+ c:V=>V.shrinkPctIn, ex:V=>[["","Shrink % (seeded LY)",V.shrinkPctIn,"%"]], x:"{shrinkPctIn}"},
+{id:"shrink",cat:"Sales",fam:"Shrink",m:"R",name:"Shrink $",abbr:"Shrink $",u:"$",mode:"B",
+ desc:"Inventory loss at retail. Editable; when net sales change, Shrink % holds and Shrink $ recalculates.",
+ f:"Net Sales $ × Shrink %",alt:["Actuals: waste feed, waste_amount × current price"],deps:["netSales","shrinkPctK"],
+ c:(V,K)=>K("netSales")*K("shrinkPctK"), ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["×","Shrink %",K("shrinkPctK"),"%"]], x:"{netSales}*{shrinkPctK}"},
+{id:"shrinkUK",cat:"Sales",fam:"Shrink",m:"U",name:"Shrink Units",abbr:"Shrink U",u:"U",mode:"C",
+ desc:"Inventory loss in units, derived from Shrink $ at the retail of stock.",
+ f:"Shrink $ ÷ Inventory AUR",alt:["Actuals: waste feed, waste_amount"],deps:["shrink","invAur"],
+ c:(V,K)=>K("shrink")/K("invAur"), ex:(V,K)=>[["","Shrink $",K("shrink"),"$"],["÷","Inventory AUR",K("invAur"),"$u"]], x:"{shrink}/{invAur}"},
+{id:"shrinkCost",cat:"Sales",fam:"Shrink",m:"C",name:"Shrink Cost $",abbr:"Shrink C",u:"$",mode:"C",
+ desc:"Cost value of shrink.",
+ f:"Shrink Units × AUC",deps:["shrinkUK","auc"],
+ c:(V,K)=>K("shrinkUK")*K("auc"), ex:(V,K)=>[["","Shrink units",K("shrinkUK"),"U"],["×","AUC",K("auc"),"$u"]], x:"{shrinkUK}*{auc}"},
+{id:"varLy",cat:"Sales",fam:"Sales Variance",m:"R",name:"Sales Difference to LY $",abbr:"Var LY $",u:"$",mode:"C",
+ desc:"Dollar gap between this year (or plan) and last year for the same mapped weeks.",
+ f:"Net Sales $ − LY Net Sales $",deps:["netSales"],raw:["lySalesR"],
+ c:(V,K)=>K("netSales")-V.lySalesR, ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["−","LY net sales $",V.lySalesR,"$"]], x:"{netSales}-{lySalesR}"},
+{id:"varLyPct",cat:"Sales",fam:"Sales Variance",m:"R",name:"Sales Variance to LY %",abbr:"Var LY %",u:"%",mode:"B",
+ desc:"Growth versus last year. Often writable: entering a % back-solves plan sales from LY.",
+ f:"(Net Sales $ − LY Net Sales $) ÷ |LY Net Sales $|",alt:["Net Sales $ ÷ LY Net Sales $ − 1"],deps:["netSales"],raw:["lySalesR"],
+ c:(V,K)=>(K("netSales")-V.lySalesR)/Math.abs(V.lySalesR), ex:(V,K)=>[["","Difference to LY $",K("netSales")-V.lySalesR,"$"],["÷","LY net sales $",V.lySalesR,"$"]], x:"({netSales}-{lySalesR})/ABS({lySalesR})"},
+{id:"varLyU",cat:"Sales",fam:"Sales Variance",m:"U",name:"Sales Units Difference to LY",abbr:"Var LY U",u:"U",mode:"C",
+ desc:"Unit gap between this year (or plan) and last year.",
+ f:"Net Sales Units − LY Net Sales Units",deps:["netSalesU"],raw:["lySalesU"],
+ c:(V,K)=>K("netSalesU")-V.lySalesU, ex:(V,K)=>[["","Net sales units",K("netSalesU"),"U"],["−","LY net sales units",V.lySalesU,"U"]], x:"{netSalesU}-{lySalesU}"},
+{id:"varLyUPct",cat:"Sales",fam:"Sales Variance",m:"U",name:"Sales Units Variance to LY %",abbr:"Var LY U %",u:"%",mode:"C",
+ desc:"Unit growth versus last year; compared with $ growth it separates volume from price.",
+ f:"(Net Sales Units − LY Units) ÷ LY Units",deps:["netSalesU"],raw:["lySalesU"],
+ c:(V,K)=>(K("netSalesU")-V.lySalesU)/V.lySalesU, ex:(V,K)=>[["","Difference to LY units",K("netSalesU")-V.lySalesU,"U"],["÷","LY net sales units",V.lySalesU,"U"]], x:"({netSalesU}-{lySalesU})/{lySalesU}"},
+{id:"varOpPct",cat:"Sales",fam:"Sales Variance",m:"R",name:"Sales Variance to Plan %",abbr:"Var OP %",u:"%",mode:"C",
+ desc:"How far actuals or the working plan have moved from the original approved plan.",
+ f:"(Net Sales $ − Original Plan Sales $) ÷ Original Plan Sales $",deps:["netSales"],raw:["opSalesR"],
+ c:(V,K)=>(K("netSales")-V.opSalesR)/V.opSalesR, ex:(V,K)=>[["","Difference to plan $",K("netSales")-V.opSalesR,"$"],["÷","Original plan sales $",V.opSalesR,"$"]], x:"({netSales}-{opSalesR})/{opSalesR}"},
+{id:"diffOp",cat:"Sales",fam:"Sales Variance",m:"R",name:"Sales Difference to Plan $",abbr:"Diff OP $",u:"$",mode:"C",
+ desc:"Dollar gap between the working plan (or actuals) and the original plan. The same measure is used against the revised plan saved at the last reforecast.",
+ f:"Net Sales $ − Original Plan Sales $",alt:["Against the revised plan: Working Plan $ − Revised Plan $"],deps:["netSales"],raw:["opSalesR"],
+ c:(V,K)=>K("netSales")-V.opSalesR, ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["−","Original plan sales $",V.opSalesR,"$"]], x:"{netSales}-{opSalesR}"},
+{id:"compSales",cat:"Sales",fam:"Comparable Sales",m:"R",name:"Comp Sales $",abbr:"Comp $",u:"$",mode:"B",
+ desc:"Sales of stores open and comparable in both years. Loaded for actuals; at levels without store detail, planned as Net Sales $ × Comp Ratio.",
+ f:"Σ Net Sales $ of comp-flagged stores  (plan: Net Sales $ × Comp Ratio %)",raw:["compSalesR"],
+ c:V=>V.compSalesR, ex:V=>[["","Comp store net sales $",V.compSalesR,"$"]], x:"{compSalesR}"},
+{id:"compGrowth",cat:"Sales",fam:"Comparable Sales",m:"R",name:"Comp Sales Growth %",abbr:"Comp %",u:"%",mode:"C",
+ desc:"Like-for-like growth of stores open in both years; the headline measure of retail health.",
+ f:"(Comp Sales $ − LY Comp Sales $) ÷ LY Comp Sales $",deps:["compSales"],raw:["lyCompSalesR"],
+ c:(V,K)=>(K("compSales")-V.lyCompSalesR)/V.lyCompSalesR, ex:(V,K)=>[["","Comp sales $ − LY comp $",K("compSales")-V.lyCompSalesR,"$"],["÷","LY comp sales $",V.lyCompSalesR,"$"]], x:"({compSales}-{lyCompSalesR})/{lyCompSalesR}"},
+{id:"compMix",cat:"Sales",fam:"Comparable Sales",m:"R",name:"Comp Sales Ratio %",abbr:"Comp Ratio",u:"%",mode:"B",
+ desc:"Share of sales from comp stores. Planned as a ratio so higher levels can derive comp sales without store detail.",
+ f:"Comp Sales $ ÷ Net Sales $",alt:["Plan: Comp Sales $ = Net Sales $ × Comp Ratio"],deps:["netSales","compSales"],
+ c:(V,K)=>K("compSales")/K("netSales"), ex:(V,K)=>[["","Comp sales $",K("compSales"),"$"],["÷","Net sales $",K("netSales"),"$"]], x:"{compSales}/{netSales}"},
+{id:"nonComp",cat:"Sales",fam:"Comparable Sales",m:"R",name:"Non-Comp Sales $",abbr:"Non-Comp $",u:"$",mode:"C",
+ desc:"Sales from new, relocated or closing stores outside the comp set.",
+ f:"Net Sales $ − Comp Sales $",deps:["netSales","compSales"],
+ c:(V,K)=>K("netSales")-K("compSales"), ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["−","Comp sales $",K("compSales"),"$"]], x:"{netSales}-{compSales}"},
+{id:"nonCompPct",cat:"Sales",fam:"Comparable Sales",m:"R",name:"Non-Comp Sales Ratio %",abbr:"Non-Comp %",u:"%",mode:"C",
+ desc:"Share of sales from new, relocated or closing stores. Equals 1 − Comp Ratio.",
+ f:"Non-Comp Sales $ ÷ Net Sales $",deps:["nonComp","netSales"],
+ c:(V,K)=>K("nonComp")/K("netSales"), ex:(V,K)=>[["","Non-comp sales $",K("nonComp"),"$"],["÷","Net sales $",K("netSales"),"$"]], x:"{nonComp}/{netSales}"},
+{id:"salesPerStore",cat:"Sales",fam:"Store & Space Productivity",m:"R",name:"Average Sales per Store $",abbr:"Avg Str Sls $",u:"$",mode:"C",
+ desc:"Sales per active store; neutralises openings and closures when comparing periods.",
+ f:"Net Sales $ (store channel) ÷ Active Store Count",deps:["netSales"],raw:["storeCount"],
+ c:(V,K)=>K("netSales")/V.storeCount, ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["÷","Active stores",V.storeCount,"#"]], x:"{netSales}/{storeCount}"},
+{id:"salesPerStoreU",cat:"Sales",fam:"Store & Space Productivity",m:"U",name:"Average Sales per Store Units",abbr:"Avg Str Sls U",u:"U",mode:"B",
+ desc:"Units per active store. Location planners often plan here and multiply up by store count.",
+ f:"Net Sales Units (store channel) ÷ Active Store Count",deps:["netSalesU"],raw:["storeCount"],
+ c:(V,K)=>K("netSalesU")/V.storeCount, ex:(V,K)=>[["","Net sales units",K("netSalesU"),"U"],["÷","Active stores",V.storeCount,"#"]], x:"{netSalesU}/{storeCount}"},
+{id:"salesSqft",cat:"Sales",fam:"Store & Space Productivity",m:"R",name:"Sales per Square Foot",abbr:"Sls / Sq Ft",u:"$u",mode:"C",
+ desc:"Space productivity; compares stores and classes of different footprint.",
+ f:"Net Sales $ (store channel) ÷ Selling Square Feet",alt:["Annualised: × 52 ÷ weeks in period"],deps:["netSales"],raw:["sqft"],
+ c:(V,K)=>K("netSales")/V.sqft, ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["÷","Selling sq ft",V.sqft,"#"]], x:"{netSales}/{sqft}"},
+{id:"salesMix",cat:"Sales",fam:"Trend & Mix",m:"P",name:"Sales Contribution %",abbr:"Mix %",u:"%",mode:"B",
+ desc:"Share of the parent node's sales. Used to spread top-down targets and keep the hierarchy balanced.",
+ f:"Net Sales $ (node) ÷ Net Sales $ (parent)",alt:["Absolute contribution: node ÷ any higher level (e.g. week ÷ quarter, class ÷ department)"],deps:["netSales"],raw:["parentSalesR"],
+ c:(V,K)=>K("netSales")/V.parentSalesR, ex:(V,K)=>[["","Class net sales $",K("netSales"),"$"],["÷","Parent net sales $",V.parentSalesR,"$"]], x:"{netSales}/{parentSalesR}"},
+{id:"build",cat:"Sales",fam:"Trend & Mix",m:"P",name:"Sales Build % (Week over Week)",abbr:"Build %",u:"%",mode:"C",
+ desc:"Momentum: change in sales versus the prior week. Applies equally to units and AUR.",
+ f:"(Current Week Sales $ − Prior Week Sales $) ÷ Prior Week Sales $",alt:["Ratio form: Current Week ÷ Prior Week (1.10 = +10%)"],raw:["curWkSalesR","prevWkSalesR"],
+ c:V=>(V.curWkSalesR-V.prevWkSalesR)/V.prevWkSalesR, ex:V=>[["","Current − prior week $",V.curWkSalesR-V.prevWkSalesR,"$"],["÷","Prior week sales $",V.prevWkSalesR,"$"]], x:"({curWkSalesR}-{prevWkSalesR})/{prevWkSalesR}"},
+
+/* ---------------- MARGIN ---------------- */
+{id:"imu",cat:"Margin",fam:"Markup",m:"P",name:"Initial Markup %",abbr:"IMU %",u:"%",mode:"B",
+ desc:"Markup built into receipts before any reductions, on landed cost (first cost plus freight). Planners enter it to derive receipt cost.",
+ f:"(Receipts $ − Receipts Cost $) ÷ Receipts $",alt:["Plan: Receipts Cost $ = Receipts $ × (1 − IMU %)"],raw:["rcptR","rcptC"],
+ c:V=>(V.rcptR-V.rcptC)/V.rcptR, ex:V=>[["","Receipts $ − receipts cost $",V.rcptR-V.rcptC,"$"],["÷","Receipts $",V.rcptR,"$"]], x:"({rcptR}-{rcptC})/{rcptR}"},
+{id:"gafsR",cat:"Margin",fam:"Goods Available for Sale",m:"R",name:"Goods Available for Sale $",abbr:"GAFS $",u:"$",mode:"C",
+ desc:"Opening stock plus season-to-date inflows at retail. Resets each season.",
+ f:"BOP $ + Receipts $ + Transfers In $ − Transfers Out $ + Markup $",deps:["xferInR","xferOutR"],raw:["bopR","rcptR","markupR"],
+ c:(V,K)=>V.bopR+V.rcptR+K("xferInR")-K("xferOutR")+V.markupR, ex:(V,K)=>[["","BOP $",V.bopR,"$"],["+","Receipts $",V.rcptR,"$"],["+","Transfers in − out $",K("xferInR")-K("xferOutR"),"$"],["+","Markup $",V.markupR,"$"]],
+ x:"{bopR}+{rcptR}+{xferInR}-{xferOutR}+{markupR}"},
+{id:"gafsC",cat:"Margin",fam:"Goods Available for Sale",m:"C",name:"Goods Available for Sale Cost $",abbr:"GAFS C",u:"$",mode:"C",
+ desc:"Cost value of goods available for sale.",
+ f:"BOP Cost $ + Receipts Cost $ + Transfers In Cost $ − Transfers Out Cost $",deps:["bopCost","rcptCost","xferInC","xferOutC"],
+ c:(V,K)=>K("bopCost")+K("rcptCost")+K("xferInC")-K("xferOutC"), ex:(V,K)=>[["","BOP cost $",K("bopCost"),"$"],["+","Receipts cost $",K("rcptCost"),"$"],["+","Transfers in − out cost $",K("xferInC")-K("xferOutC"),"$"]],
+ x:"{bopCost}+{rcptCost}+{xferInC}-{xferOutC}"},
+{id:"cogs",cat:"Margin",fam:"Cost of Goods Sold",m:"C",name:"Cost of Goods Sold",abbr:"COGS",u:"$",mode:"C",
+ desc:"Cost of everything that left stock through sales, shrink and inventory adjustments, valued at average unit cost. Adjustments are negative when stock is lost, so a loss adds to COGS. Markdowns change retail value, not cost, so they reduce margin through sales $ rather than COGS.",
+ f:"Net Sales Cost $ + Shrink Cost $ − Inventory Adjustments Cost $",alt:["GAFS Cost $ − EOP Cost $ (same result)","Net Sales $ − Gross Margin $"],deps:["netSalesCost","shrinkCost","invAdjPC"],
+ c:(V,K)=>K("netSalesCost")+K("shrinkCost")-K("invAdjPC"), ex:(V,K)=>[["","Net sales cost $",K("netSalesCost"),"$"],["+","Shrink cost $",K("shrinkCost"),"$"],["−","Inventory adjustments cost $ (loss is negative)",K("invAdjPC"),"$"]], x:"{netSalesCost}+{shrinkCost}-{invAdjPC}"},
+{id:"gm",cat:"Margin",fam:"Gross Margin",m:"R",name:"Gross Margin $",abbr:"GM $",u:"$",mode:"C",
+ desc:"Merchandise margin after cost of goods sold; the core profit line planned alongside sales. Also called maintained markup or merch margin.",
+ f:"Net Sales $ − COGS",deps:["netSales","cogs"],
+ c:(V,K)=>K("netSales")-K("cogs"), ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["−","COGS",K("cogs"),"$"]], x:"{netSales}-{cogs}"},
+{id:"gmPct",cat:"Margin",fam:"Gross Margin",m:"P",name:"Gross Margin %",abbr:"GM %",u:"%",mode:"C",
+ desc:"Gross margin as a rate of sales; compares profitability across classes of different size.",
+ f:"Gross Margin $ ÷ Net Sales $",deps:["gm","netSales"],
+ c:(V,K)=>K("gm")/K("netSales"), ex:(V,K)=>[["","Gross margin $",K("gm"),"$"],["÷","Net sales $",K("netSales"),"$"]], x:"{gm}/{netSales}"},
+{id:"gmroi",cat:"Margin",fam:"Return on Inventory",m:"P",name:"GMROI",abbr:"GMROI",u:"x",mode:"C",
+ desc:"Margin dollars returned per dollar of average inventory at cost. Period value; scale by 52 ÷ weeks to annualise.",
+ f:"Gross Margin $ ÷ Average Inventory Cost $",deps:["gm","avgInvC"],
+ c:(V,K)=>K("gm")/K("avgInvC"), ex:(V,K)=>[["","Gross margin $",K("gm"),"$"],["÷","Average inventory cost $",K("avgInvC"),"$"]], x:"{gm}/{avgInvC}"},
+/* ---------------- REDUCTIONS ---------------- */
+/* ---------------- INVENTORY ---------------- */
+{id:"bop",cat:"Inventory",fam:"Beginning of Period Inventory",m:"R",name:"BOP Inventory $",abbr:"BOP $",u:"$",mode:"C",
+ desc:"Opening stock at retail. Always the prior period's EOP unless a season-start override is used.",
+ f:"Prior period EOP $",raw:["bopR"],c:V=>V.bopR,ex:V=>[["","Prior period EOP $",V.bopR,"$"]],x:"{bopR}"},
+{id:"bopCost",cat:"Inventory",fam:"Beginning of Period Inventory",m:"C",name:"BOP Inventory Cost $",abbr:"BOP C",u:"$",mode:"C",
+ desc:"Opening stock at cost.",f:"Prior period EOP Cost $",raw:["bopC"],c:V=>V.bopC,ex:V=>[["","Prior period EOP cost $",V.bopC,"$"]],x:"{bopC}"},
+{id:"bopUnits",cat:"Inventory",fam:"Beginning of Period Inventory",m:"U",name:"BOP Inventory Units",abbr:"BOP U",u:"U",mode:"C",
+ desc:"Opening stock units.",f:"Prior period EOP Units",raw:["bopU"],c:V=>V.bopU,ex:V=>[["","Prior period EOP units",V.bopU,"U"]],x:"{bopU}"},
+{id:"eop",cat:"Inventory",fam:"End of Period Inventory",m:"R",name:"EOP Inventory $",abbr:"EOP $",u:"$",mode:"B",
+ desc:"Closing stock from the retail stock-ledger roll-forward. Planners may enter it (receipts then back-solve) or let it calculate.",
+ f:"BOP $ + Receipts $ + Transfers In $ − Transfers Out $ + Markup $ + Inventory Adjustments $ − Net Sales $ − Total Markdown $ − Shrink $",alt:["Plan: Target WOS × average forward weekly sales"],
+ deps:["gafsR","invAdjPR","netSales","totalMd","shrink"],
+ c:(V,K)=>K("gafsR")+K("invAdjPR")-K("netSales")-K("totalMd")-K("shrink"),
+ ex:(V,K)=>[["","GAFS $ (BOP + receipts + net transfers + markup)",K("gafsR"),"$"],["+","Inventory adjustments $",K("invAdjPR"),"$"],["−","Net sales $",K("netSales"),"$"],["−","Total markdown $",K("totalMd"),"$"],["−","Shrink $",K("shrink"),"$"]],
+ x:"{gafsR}+{invAdjPR}-{netSales}-{totalMd}-{shrink}"},
+{id:"eopCost",cat:"Inventory",fam:"End of Period Inventory",m:"C",name:"EOP Inventory Cost $",abbr:"EOP C",u:"$",mode:"C",
+ desc:"Closing stock at cost from the cost roll-forward. Markdowns change retail value, not cost, so they are not deducted here.",
+ f:"BOP Cost $ + Receipts Cost $ + Transfers In Cost $ − Transfers Out Cost $ + Inventory Adjustments Cost $ − Net Sales Cost $ − Shrink Cost $",alt:["EOP Units × AUC"],
+ deps:["gafsC","invAdjPC","netSalesCost","shrinkCost"],
+ c:(V,K)=>K("gafsC")+K("invAdjPC")-K("netSalesCost")-K("shrinkCost"),
+ ex:(V,K)=>[["","GAFS cost $ (BOP + receipts + net transfers)",K("gafsC"),"$"],["+","Inventory adjustments cost $",K("invAdjPC"),"$"],["−","Net sales cost $",K("netSalesCost"),"$"],["−","Shrink cost $",K("shrinkCost"),"$"]],
+ x:"{gafsC}+{invAdjPC}-{netSalesCost}-{shrinkCost}"},
+{id:"eopUnits",cat:"Inventory",fam:"End of Period Inventory",m:"U",name:"EOP Inventory Units",abbr:"EOP U",u:"U",mode:"B",
+ desc:"Closing stock in units.",
+ f:"BOP Units + Receipts Units + Transfers In Units − Transfers Out Units + Inventory Adjustments Units − Net Sales Units − Shrink Units",
+ deps:["bopUnits","rcptUnits","xferInU","xferOutU","invAdjPU","netSalesU","shrinkUK"],
+ c:(V,K)=>K("bopUnits")+K("rcptUnits")+K("xferInU")-K("xferOutU")+K("invAdjPU")-K("netSalesU")-K("shrinkUK"),
+ ex:(V,K)=>[["","BOP + receipts units",K("bopUnits")+K("rcptUnits"),"U"],["+","Transfers in − out units",K("xferInU")-K("xferOutU"),"U"],["+","Inventory adjustments units",K("invAdjPU"),"U"],["−","Net sales units",K("netSalesU"),"U"],["−","Shrink units",K("shrinkUK"),"U"]],
+ x:"{bopUnits}+{rcptUnits}+{xferInU}-{xferOutU}+{invAdjPU}-{netSalesU}-{shrinkUK}"},
+{id:"tgtWosK",cat:"Inventory",fam:"Target Inventory",m:"P",name:"Target Weeks of Supply",abbr:"Tgt WOS",u:"wks",mode:"E",
+ desc:"Planner-set number of future weeks the ending inventory should cover. Drives target EOP and OTB.",
+ f:"Planner entry",raw:["tgtWos"],c:V=>V.tgtWos,ex:V=>[["","Entered target",V.tgtWos,"wks"]],x:"{tgtWos}"},
+{id:"tgtEop",cat:"Inventory",fam:"Target Inventory",m:"R",name:"Target EOP $",abbr:"Tgt EOP $",u:"$",mode:"C",
+ desc:"Ending inventory needed to cover the next Target WOS weeks of planned sales. This inventory policy, not only the sales plan, drives receipt need and OTB.",
+ f:"Σ planned sales $ of the next Target WOS weeks (fractional last week)",alt:["Turn policy: Planned Sales $ ÷ Target Turn","Stock-to-sales policy: next period Sales $ × Target S/S"],deps:["tgtWosK"],raw:["fwdWeekly"],
+ c:(V,K)=>firstN(K("tgtWosK"),V.fwdWeekly),
+ ex:(V,K)=>{const n=Math.floor(K("tgtWosK"));return [["","Weeks 1–"+n+" planned sales $",sum(V.fwdWeekly.slice(0,n)),"$"],["+","Part of week "+(n+1),(K("tgtWosK")-n)*(V.fwdWeekly[n]||0),"$"]]},
+ x:"SUMPRODUCT((ROW({WK})-ROW({WK1})+1<=INT({tgtWosK}))*{WK})+IFERROR(({tgtWosK}-INT({tgtWosK}))*INDEX({WK},INT({tgtWosK})+1),0)"},
+{id:"tgtEopC",cat:"Inventory",fam:"Target Inventory",m:"C",name:"Target EOP Cost $",abbr:"Tgt EOP C",u:"$",mode:"C",
+ desc:"Target ending inventory at cost.",
+ f:"Target EOP Units × AUC",deps:["tgtEopU","auc"],
+ c:(V,K)=>K("tgtEopU")*K("auc"), ex:(V,K)=>[["","Target EOP units",K("tgtEopU"),"U"],["×","AUC",K("auc"),"$u"]], x:"{tgtEopU}*{auc}"},
+{id:"tgtEopU",cat:"Inventory",fam:"Target Inventory",m:"U",name:"Target EOP Units",abbr:"Tgt EOP U",u:"U",mode:"C",
+ desc:"Target ending inventory in units: Target WOS weeks of average forward unit sales.",
+ f:"Target WOS × (Forward Planned Sales Units ÷ N)",alt:["Σ planned sales units of the next Target WOS weeks","Target EOP $ ÷ AUR (approximation)"],deps:["tgtWosK"],raw:["fwdSalesU","fwosWeeks"],
+ c:(V,K)=>K("tgtWosK")*V.fwdSalesU/V.fwosWeeks, ex:(V,K)=>[["","Target WOS",K("tgtWosK"),"wks"],["×","Average forward weekly units",V.fwdSalesU/V.fwosWeeks,"U"]], x:"{tgtWosK}*{fwdSalesU}/{fwosWeeks}"},
+{id:"rcpt",cat:"Inventory",fam:"Receipts",m:"R",name:"Receipts $",abbr:"Rcpt $",u:"$",mode:"B",
+ desc:"Working-plan (WP) receipts. Entered, or back-solved when EOP or target weeks of supply is planned. OTB is WP receipts less receipts to date and on order.",
+ f:"Entered  |  back-solve: EOP $ − BOP $ + Net Sales $ + Total Markdown $ + Shrink $ − Transfers In $ + Transfers Out $ − Markup $ − Inventory Adjustments $",alt:["Receipts To-Date $ + On Order $ + receipts still to be bought"],raw:["rcptR"],
+ c:V=>V.rcptR, ex:V=>[["","Planned / actual receipts $",V.rcptR,"$"]], x:"{rcptR}"},
+{id:"rcptCost",cat:"Inventory",fam:"Receipts",m:"C",name:"Receipts Cost $",abbr:"Rcpt C",u:"$",mode:"C",
+ desc:"Cost of receipts; in the plan derived from receipts $ and IMU %.",
+ f:"Receipts $ × (1 − IMU %)",alt:["Landed cost = first cost × (1 + estimated freight factor %)"],deps:["rcpt","imu"],
+ c:(V,K)=>K("rcpt")*(1-K("imu")), ex:(V,K)=>[["","Receipts $",K("rcpt"),"$"],["×","1 − IMU %",1-K("imu"),"%"]], x:"{rcpt}*(1-{imu})"},
+{id:"rcptUnits",cat:"Inventory",fam:"Receipts",m:"U",name:"Receipts Units",abbr:"Rcpt U",u:"U",mode:"B",
+ desc:"Units received; in the plan derived from receipts $ and the planned unit retail.",
+ f:"Entered  |  plan: Receipts $ ÷ AUR",raw:["rcptU"],
+ c:V=>V.rcptU, ex:V=>[["","Planned / actual receipt units",V.rcptU,"U"]], x:"{rcptU}"},
+{id:"avgInvR",cat:"Inventory",fam:"Average Inventory",m:"R",name:"Average Inventory $",abbr:"Avg Inv $",u:"$",mode:"C",
+ desc:"Mean stock carried. For multi-week periods use BOP plus every weekly EOP, divided by weeks + 1.",
+ f:"(BOP $ + EOP $) ÷ 2   [n periods: (BOP + Σ EOP) ÷ (n + 1)]",deps:["bop","eop"],
+ c:(V,K)=>(K("bop")+K("eop"))/2, ex:(V,K)=>[["","BOP $ + EOP $",K("bop")+K("eop"),"$"],["÷","Points",2,"#"]], x:"({bop}+{eop})/2"},
+{id:"avgInvC",cat:"Inventory",fam:"Average Inventory",m:"C",name:"Average Inventory Cost $",abbr:"Avg Inv C",u:"$",mode:"C",
+ desc:"Mean stock at cost; the denominator of GMROI and cost turn.",
+ f:"(BOP Cost $ + EOP Cost $) ÷ 2",deps:["bopCost","eopCost"],
+ c:(V,K)=>(K("bopCost")+K("eopCost"))/2, ex:(V,K)=>[["","BOP cost $ + EOP cost $",K("bopCost")+K("eopCost"),"$"],["÷","Points",2,"#"]], x:"({bopCost}+{eopCost})/2"},
+{id:"avgInvU",cat:"Inventory",fam:"Average Inventory",m:"U",name:"Average Inventory Units",abbr:"Avg Inv U",u:"U",mode:"C",
+ desc:"Mean stock in units.",
+ f:"(BOP Units + EOP Units) ÷ 2",deps:["bopUnits","eopUnits"],
+ c:(V,K)=>(K("bopUnits")+K("eopUnits"))/2, ex:(V,K)=>[["","BOP units + EOP units",K("bopUnits")+K("eopUnits"),"U"],["÷","Points",2,"#"]], x:"({bopUnits}+{eopUnits})/2"},
+{id:"invAur",cat:"Inventory",fam:"Inventory AUR",m:"R",name:"Inventory AUR",abbr:"Inv AUR",u:"$u",mode:"C",core:"C",sd:"C",
+ desc:"Average retail of units in stock, before any markdown is taken at the till. Used to value inventory movements (transfers, adjustments) at stock retail rather than selling price. Opening stock is used so the value does not depend on the movements it prices.",
+ f:"BOP $ ÷ BOP Units",alt:["Closing basis: EOP $ ÷ EOP Units"],deps:["bop","bopUnits"],
+ c:(V,K)=>K("bop")/K("bopUnits"), ex:(V,K)=>[["","BOP $",K("bop"),"$"],["÷","BOP units",K("bopUnits"),"U"]], x:"{bop}/{bopUnits}"},
+{id:"invStore",cat:"Inventory",fam:"Inventory per Store",m:"R",name:"EOP Inventory per Store $",abbr:"EOP / Str $",u:"$",mode:"C",
+ desc:"Stock depth per store; checks presentation minimums.",
+ f:"EOP $ ÷ Active Store Count",deps:["eop"],raw:["storeCount"],
+ c:(V,K)=>K("eop")/V.storeCount, ex:(V,K)=>[["","EOP $",K("eop"),"$"],["÷","Active stores",V.storeCount,"#"]], x:"{eop}/{storeCount}"},
+{id:"invStoreU",cat:"Inventory",fam:"Inventory per Store",m:"U",name:"EOP Inventory per Store Units",abbr:"EOP / Str U",u:"U",mode:"B",
+ desc:"Units on hand per store.",
+ f:"EOP Units ÷ Active Store Count",deps:["eopUnits"],raw:["storeCount"],
+ c:(V,K)=>K("eopUnits")/V.storeCount, ex:(V,K)=>[["","EOP units",K("eopUnits"),"U"],["÷","Active stores",V.storeCount,"#"]], x:"{eopUnits}/{storeCount}"},
+/* ---------------- PRODUCTIVITY ---------------- */
+{id:"sellThru",cat:"Productivity",fam:"Sell-Through",m:"R",name:"Sell-Through % ($)",abbr:"ST %",u:"%",mode:"C",
+ desc:"Share of goods available that sold in the period.",
+ f:"Net Sales $ ÷ (BOP $ + Receipts $)",alt:["Opening-stock basis: Net Sales $ ÷ BOP $"],deps:["netSales","bop","rcpt"],
+ c:(V,K)=>K("netSales")/(K("bop")+K("rcpt")), ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["÷","BOP $ + receipts $",K("bop")+K("rcpt"),"$"]], x:"{netSales}/({bop}+{rcpt})"},
+{id:"sellThruU",cat:"Productivity",fam:"Sell-Through",m:"U",name:"Sell-Through % (Units)",abbr:"ST U %",u:"%",mode:"C",
+ desc:"Unit sell-through; read alongside $ sell-through to see markdown effect.",
+ f:"Net Sales Units ÷ (BOP Units + Receipts Units)",deps:["netSalesU","bopUnits","rcptUnits"],
+ c:(V,K)=>K("netSalesU")/(K("bopUnits")+K("rcptUnits")), ex:(V,K)=>[["","Net sales units",K("netSalesU"),"U"],["÷","BOP + receipts units",K("bopUnits")+K("rcptUnits"),"U"]], x:"{netSalesU}/({bopUnits}+{rcptUnits})"},
+{id:"turn",cat:"Productivity",fam:"Inventory Turn",m:"R",name:"Turn ($)",abbr:"Turn $",u:"x",mode:"C",
+ desc:"How many times average stock sold through in the period, at retail. Use cumulative sales over cumulative average inventory for season or year to date.",
+ f:"Net Sales $ ÷ Average Inventory $",deps:["netSales","avgInvR"],
+ c:(V,K)=>K("netSales")/K("avgInvR"), ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["÷","Average inventory $",K("avgInvR"),"$"]], x:"{netSales}/{avgInvR}"},
+{id:"turnC",cat:"Productivity",fam:"Inventory Turn",m:"C",name:"Turn (Cost)",abbr:"Turn C",u:"x",mode:"C",
+ desc:"Turn at cost; matches finance's view of inventory investment.",
+ f:"COGS ÷ Average Inventory Cost $",deps:["cogs","avgInvC"],
+ c:(V,K)=>K("cogs")/K("avgInvC"), ex:(V,K)=>[["","COGS",K("cogs"),"$"],["÷","Average inventory cost $",K("avgInvC"),"$"]], x:"{cogs}/{avgInvC}"},
+{id:"turnU",cat:"Productivity",fam:"Inventory Turn",m:"U",name:"Turn (Units)",abbr:"Turn U",u:"x",mode:"C",
+ desc:"Turn in units, free of price and markdown effects.",
+ f:"Net Sales Units ÷ Average Inventory Units",deps:["netSalesU","avgInvU"],
+ c:(V,K)=>K("netSalesU")/K("avgInvU"), ex:(V,K)=>[["","Net sales units",K("netSalesU"),"U"],["÷","Average inventory units",K("avgInvU"),"U"]], x:"{netSalesU}/{avgInvU}"},
+{id:"annTurn",cat:"Productivity",fam:"Inventory Turn",m:"R",name:"Annualized Turn ($)",abbr:"Ann Turn",u:"x",mode:"C",
+ desc:"Period turn scaled to a 52-week year so months and seasons compare on one basis.",
+ f:"Turn ($) × 52 ÷ Weeks in Period",deps:["turn"],raw:["weeks"],
+ c:(V,K)=>K("turn")*52/V.weeks, ex:(V,K)=>[["","Period turn",K("turn"),"x"],["×","52 ÷ weeks in period",52/V.weeks,"x"]], x:"{turn}*52/{weeks}"},
+{id:"ss",cat:"Productivity",fam:"Stock-to-Sales",m:"R",name:"Stock-to-Sales ($)",abbr:"S/S $",u:"x",mode:"C",
+ desc:"Opening stock needed per dollar of sales; used to set opening inventory for a month.",
+ f:"BOP $ ÷ Net Sales $",alt:["Average basis: Average Inventory $ ÷ average period Sales $"],deps:["bop","netSales"],
+ c:(V,K)=>K("bop")/K("netSales"), ex:(V,K)=>[["","BOP $",K("bop"),"$"],["÷","Net sales $",K("netSales"),"$"]], x:"{bop}/{netSales}"},
+{id:"ssC",cat:"Productivity",fam:"Stock-to-Sales",m:"C",name:"Stock-to-Sales (Cost)",abbr:"S/S C",u:"x",mode:"C",
+ desc:"Opening stock at cost per dollar of cost of goods sold.",
+ f:"BOP Cost $ ÷ COGS",deps:["bopCost","cogs"],
+ c:(V,K)=>K("bopCost")/K("cogs"), ex:(V,K)=>[["","BOP cost $",K("bopCost"),"$"],["÷","COGS",K("cogs"),"$"]], x:"{bopCost}/{cogs}"},
+{id:"ssU",cat:"Productivity",fam:"Stock-to-Sales",m:"U",name:"Stock-to-Sales (Units)",abbr:"S/S U",u:"x",mode:"C",
+ desc:"Opening units per unit sold.",
+ f:"BOP Units ÷ Net Sales Units",deps:["bopUnits","netSalesU"],
+ c:(V,K)=>K("bopUnits")/K("netSalesU"), ex:(V,K)=>[["","BOP units",K("bopUnits"),"U"],["÷","Net sales units",K("netSalesU"),"U"]], x:"{bopUnits}/{netSalesU}"},
+{id:"woh",cat:"Productivity",fam:"Weeks of Supply",m:"R",name:"Weeks on Hand (backward)",abbr:"WOH",u:"wks",mode:"B",
+ desc:"Weeks of average stock at the period's own weekly sales rate. Entering it back-solves EOP.",
+ f:"Average Inventory $ ÷ (Net Sales $ ÷ Weeks in Period)",deps:["avgInvR","netSales"],raw:["weeks"],
+ c:(V,K)=>K("avgInvR")/(K("netSales")/V.weeks), ex:(V,K)=>[["","Average inventory $",K("avgInvR"),"$"],["÷","Average weekly sales $",K("netSales")/V.weeks,"$"]], x:"{avgInvR}/({netSales}/{weeks})"},
+{id:"fwos",cat:"Productivity",fam:"Weeks of Supply",m:"R",name:"Forward Weeks of Supply ($)",abbr:"FWOS $",u:"wks",mode:"B",
+ desc:"Weeks the current EOP lasts against the average of the next N planned weeks (N commonly 13). Editable as a receipt-planning lever.",
+ f:"EOP $ ÷ (Forward Planned Sales $ ÷ N)",deps:["eop"],raw:["fwdSalesR","fwosWeeks"],
+ c:(V,K)=>K("eop")/(V.fwdSalesR/V.fwosWeeks), ex:(V,K)=>[["","EOP $",K("eop"),"$"],["÷","Average forward weekly sales $",V.fwdSalesR/V.fwosWeeks,"$"]], x:"{eop}/({fwdSalesR}/{fwosWeeks})"},
+{id:"fwosU",cat:"Productivity",fam:"Weeks of Supply",m:"U",name:"Forward Weeks of Supply (Units)",abbr:"FWOS U",u:"wks",mode:"B",
+ desc:"Unit version of forward weeks of supply.",
+ f:"EOP Units ÷ (Forward Planned Sales Units ÷ N)",deps:["eopUnits"],raw:["fwdSalesU","fwosWeeks"],
+ c:(V,K)=>K("eopUnits")/(V.fwdSalesU/V.fwosWeeks), ex:(V,K)=>[["","EOP units",K("eopUnits"),"U"],["÷","Average forward weekly units",V.fwdSalesU/V.fwosWeeks,"U"]], x:"{eopUnits}/({fwdSalesU}/{fwosWeeks})"},
+{id:"fwdCover",cat:"Productivity",fam:"Weeks of Supply",m:"R",name:"Forward Cover (cumulative method)",abbr:"Fwd Cover",u:"wks",mode:"B",
+ desc:"Counts future weeks one by one until cumulative planned sales exhaust EOP, with a fractional last week. More precise than the averaging method when sales are seasonal.",
+ f:"n where Σ future weekly sales $ (weeks 1…n) ≤ EOP $, plus remaining EOP ÷ week n+1 sales",deps:["eop"],raw:["fwdWeekly"],
+ c:(V,K)=>coverWeeks(K("eop"),V.fwdWeekly),
+ ex:(V,K)=>{const e=K("eop");let s=e,n=0;for(const w of V.fwdWeekly){if(s>=w){s-=w;n++}else break}return [["","EOP $",e,"$"],["−","Weeks 1–"+n+" planned sales $",sum(V.fwdWeekly.slice(0,n)),"$"],["÷","Week "+(n+1)+" sales $ (part week)",V.fwdWeekly[n]||1,"$"]]},
+ x:"IF(COUNTIF({WKC},\"<=\"&{eop})>=13,13,COUNTIF({WKC},\"<=\"&{eop})+({eop}-IF(COUNTIF({WKC},\"<=\"&{eop})=0,0,INDEX({WKC},COUNTIF({WKC},\"<=\"&{eop}))))/INDEX({WK},COUNTIF({WKC},\"<=\"&{eop})+1))"},
+{id:"mos",cat:"Productivity",fam:"Weeks of Supply",m:"R",name:"Forward Months of Supply",abbr:"FMOS",u:"mo",mode:"B",
+ desc:"Month-level forward cover for plans whose lowest time level is month.",
+ f:"n where Σ future monthly sales $ (months 1…n) ≤ EOP $, plus remaining EOP ÷ month n+1 sales",deps:["eop"],raw:["fm1S","fm2S","fm3S"],
+ c:(V,K)=>coverWeeks(K("eop"),[V.fm1S,V.fm2S,V.fm3S]),
+ ex:(V,K)=>{const a=[V.fm1S,V.fm2S,V.fm3S],e=K("eop");let s=e,n=0;for(const w of a){if(s>=w){s-=w;n++}else break}return [["","EOP $",e,"$"],["−","Months 1–"+n+" planned sales $",sum(a.slice(0,n)),"$"],["÷","Month "+(n+1)+" sales $ (part month)",a[n]||1,"$"]]},
+ x:"IF({eop}>={fm1S}+{fm2S}+{fm3S},3,IF({eop}>={fm1S}+{fm2S},2+({eop}-{fm1S}-{fm2S})/{fm3S},IF({eop}>={fm1S},1+({eop}-{fm1S})/{fm2S},{eop}/{fm1S})))"},
+{id:"fresh",cat:"Productivity",fam:"Freshness & Flow",m:"P",name:"Inventory Freshness %",abbr:"Fresh %",u:"%",mode:"C",
+ desc:"Share of goods available that arrived this period; how new the assortment feels.",
+ f:"Receipts $ ÷ (BOP $ + Receipts $)",deps:["rcpt","bop"],
+ c:(V,K)=>K("rcpt")/(K("bop")+K("rcpt")), ex:(V,K)=>[["","Receipts $",K("rcpt"),"$"],["÷","BOP $ + receipts $",K("bop")+K("rcpt"),"$"]], x:"{rcpt}/({bop}+{rcpt})"},
+{id:"rcptSales",cat:"Productivity",fam:"Freshness & Flow",m:"P",name:"Receipt-to-Sales Ratio",abbr:"Rcpt / Sls",u:"x",mode:"C",
+ desc:"Whether inflow is running ahead of or behind sales; above 1 builds inventory.",
+ f:"Receipts $ ÷ Net Sales $",deps:["rcpt","netSales"],
+ c:(V,K)=>K("rcpt")/K("netSales"), ex:(V,K)=>[["","Receipts $",K("rcpt"),"$"],["÷","Net sales $",K("netSales"),"$"]], x:"{rcpt}/{netSales}"},
+
+/* ---------------- OPEN TO BUY ---------------- */
+{id:"ooAdj",cat:"Open to Buy",fam:"On Order",m:"R",name:"On Order Adjustment $",abbr:"OO Adj $",u:"$",mode:"E",
+ desc:"Planner correction to open orders: expected chases (+) or cancellations (−). OTB subtracts On Order and this adjustment. It adjusts commitments only; sales, markdown and inventory variance already flow into OTB through the receipt-need equation.",
+ f:"Planner entry",raw:["ooAdjR"],c:V=>V.ooAdjR,ex:V=>[["","Entered adjustment $",V.ooAdjR,"$"]],x:"{ooAdjR}"},
+{id:"otb",cat:"Open to Buy",fam:"Open to Buy",m:"R",name:"Open to Buy $",abbr:"OTB $",u:"$",mode:"C",neg:1,
+ desc:"Working-plan receipts still open to commit: WP receipts less what has already been received or ordered. WP receipts move with the plan (they back-solve when EOP, target WOS or sales change), so OTB is a live number. Negative means overbought and is shown, not floored. Elapsed periods are zero.",
+ f:"WP Receipts $ − Receipts To-Date $ − On Order $ − On Order Adjustment $",
+ alt:["Future periods (nothing received yet): WP Receipts $ − On Order $ − On Order Adjustment $"],
+ note:"Compare with OTB to OP $, which measures the same commitments against the approved OP receipt budget.",
+ deps:["rcpt","ooR","ooAdj"],raw:["rcptTdR"],
+ c:(V,K)=>K("rcpt")-V.rcptTdR-K("ooR")-K("ooAdj"),
+ ex:(V,K)=>[["","WP receipts $",K("rcpt"),"$"],["−","Receipts to-date $",V.rcptTdR,"$"],["−","On order $",K("ooR"),"$"],["−","On order adjustment $",K("ooAdj"),"$"]],
+ x:"{rcpt}-{rcptTdR}-{ooR}-{ooAdj}"},
+{id:"otbC",cat:"Open to Buy",fam:"Open to Buy",m:"C",name:"Open to Buy Cost $",abbr:"OTB C",u:"$",mode:"C",neg:1,
+ desc:"OTB at cost, the measure buyers spend against. Negative means overbought.",
+ f:"WP Receipts Cost $ − Receipts To-Date Cost $ − On Order Cost $ − On Order Adjustment Cost $",deps:["rcptCost","ooC"],raw:["rcptTdC","ooAdjC"],
+ c:(V,K)=>K("rcptCost")-V.rcptTdC-K("ooC")-V.ooAdjC,
+ ex:(V,K)=>[["","WP receipts cost $",K("rcptCost"),"$"],["−","Receipts to-date cost $",V.rcptTdC,"$"],["−","On order cost $",K("ooC"),"$"],["−","On order adjustment cost $",V.ooAdjC,"$"]],
+ x:"{rcptCost}-{rcptTdC}-{ooC}-{ooAdjC}"},
+{id:"otbU",cat:"Open to Buy",fam:"Open to Buy",m:"U",name:"Open to Buy Units",abbr:"OTB U",u:"U",mode:"C",neg:1,
+ desc:"OTB in units. Negative means overbought.",
+ f:"WP Receipts Units − Receipts To-Date Units − On Order Units − On Order Adjustment Units",deps:["rcptUnits","ooU"],raw:["rcptTdU","ooAdjU"],
+ c:(V,K)=>K("rcptUnits")-V.rcptTdU-K("ooU")-V.ooAdjU,
+ ex:(V,K)=>[["","WP receipts units",K("rcptUnits"),"U"],["−","Receipts to-date units",V.rcptTdU,"U"],["−","On order units",K("ooU"),"U"],["−","On order adjustment units",V.ooAdjU,"U"]],
+ x:"{rcptUnits}-{rcptTdU}-{ooU}-{ooAdjU}"},
+{id:"otbOp",core:"C",sd:"C",cat:"Open to Buy",fam:"Open to Buy",m:"R",name:"OTB to OP $",abbr:"OTB OP $",u:"$",mode:"C",neg:1,
+ desc:"Headroom against the approved OP receipt budget: OP receipts less what has already been received or ordered.",
+ f:"OP Receipts $ − Receipts To-Date $ − On Order $ − On Order Adjustment $",deps:["ooR","ooAdj"],raw:["opRcptR","rcptTdR"],
+ c:(V,K)=>V.opRcptR-V.rcptTdR-K("ooR")-K("ooAdj"),
+ ex:(V,K)=>[["","OP receipts $",V.opRcptR,"$"],["−","Receipts to-date $",V.rcptTdR,"$"],["−","On order $",K("ooR"),"$"],["−","On order adjustment $",K("ooAdj"),"$"]],
+ x:"{opRcptR}-{rcptTdR}-{ooR}-{ooAdj}"},
+{id:"otbOpC",core:"C",sd:"C",cat:"Open to Buy",fam:"Open to Buy",m:"C",name:"OTB to OP Cost $",abbr:"OTB OP C",u:"$",mode:"C",neg:1,
+ desc:"OP receipt budget headroom at cost.",
+ f:"OP Receipts Cost $ − Receipts To-Date Cost $ − On Order Cost $ − On Order Adjustment Cost $",deps:["ooC"],raw:["opRcptC","rcptTdC","ooAdjC"],
+ c:(V,K)=>V.opRcptC-V.rcptTdC-K("ooC")-V.ooAdjC,
+ ex:(V,K)=>[["","OP receipts cost $",V.opRcptC,"$"],["−","Receipts to-date cost $",V.rcptTdC,"$"],["−","On order cost $",K("ooC"),"$"],["−","On order adjustment cost $",V.ooAdjC,"$"]],
+ x:"{opRcptC}-{rcptTdC}-{ooC}-{ooAdjC}"},
+{id:"otbOpU",core:"C",sd:"C",cat:"Open to Buy",fam:"Open to Buy",m:"U",name:"OTB to OP Units",abbr:"OTB OP U",u:"U",mode:"C",neg:1,
+ desc:"OP receipt budget headroom in units.",
+ f:"OP Receipts Units − Receipts To-Date Units − On Order Units − On Order Adjustment Units",deps:["ooU"],raw:["opRcptU","rcptTdU","ooAdjU"],
+ c:(V,K)=>V.opRcptU-V.rcptTdU-K("ooU")-V.ooAdjU,
+ ex:(V,K)=>[["","OP receipts units",V.opRcptU,"U"],["−","Receipts to-date units",V.rcptTdU,"U"],["−","On order units",K("ooU"),"U"],["−","On order adjustment units",V.ooAdjU,"U"]],
+ x:"{opRcptU}-{rcptTdU}-{ooU}-{ooAdjU}"},
+{id:"cumOtb",cat:"Open to Buy",fam:"Open to Buy",m:"R",name:"Cumulative Open to Buy $",abbr:"Cum OTB $",u:"$",mode:"C",neg:1,
+ desc:"For businesses that roll unspent OTB forward or let overspend borrow from future periods. Businesses that hold OTB per month use period OTB only.",
+ f:"Open to Buy $ (this period) + Cumulative OTB $ (prior periods)",deps:["otb"],raw:["priorCumOtbR"],
+ c:(V,K)=>K("otb")+V.priorCumOtbR, ex:(V,K)=>[["","OTB $ this period",K("otb"),"$"],["+","Prior periods cumulative OTB $",V.priorCumOtbR,"$"]], x:"{otb}+{priorCumOtbR}"},
+];
+
+/* ===== ALO master additions (KPIs not already in the standard library) ===== */
+Object.assign(V,{
+  webSalesR:120000, sfsPct:0.25, mdSalesPct:0.14, lyContrPct:0.19, llySalesR:295000,
+  curMoSalesR:340000, prevMoSalesR:320000, buildEdit:1.05,
+  finTgtR:1750000, finRfcstR:1700000, tdWpSalesR:1720000, opSeasonR:1500000, tgtAttrMix:0.22, strPct:0.15, moWpSalesR:360000,
+  transferInU:500, transferOutU:300, invAdjU:-120,
+  bopTotalR:4800000, eopTotalR:4500000, lyEopU:44000, curWkSalesU:4400,
+  lyStoreCount:48, ccCount:120, lyCcCount:110,
+  _x:0
+});
+Object.assign(INPUTS,{
+  webSalesR:{n:"Web Net Sales $",d:"Net sales of the Web (ECOM) channel.",t:"Actuals / Plan",s:"Sales feed by channel",g:"Channel x Subcategory x Week",u:"$"},
+  sfsPct:{n:"SFS / BOPIS % Share",d:"Share of Web sales fulfilled by ship-from-store or buy-online-pick-up-in-store.",t:"Plan entry (seeded LY)",s:"Order feed with fulfilment location",g:"Channel x Subcategory x Week",u:"%"},
+  mdSalesPct:{n:"Markdown Sales %",d:"Share of net sales sold at markdown price status.",t:"Plan entry (seeded LY)",s:"Sales feed with price status (FP / MD)",g:"Channel x Subcategory x Week",u:"%"},
+  lyContrPct:{n:"LY Contribution %",d:"Node share of its parent last year.",t:"History",s:"Sales history",g:"Any hierarchy",u:"%"},
+  llySalesR:{n:"LLY Net Sales $",d:"Net sales two years ago for the mapped weeks.",t:"History",s:"Sales history + week mapping",g:"Channel x Subcategory x Week",u:"$"},
+  curMoSalesR:{n:"Current Month Net Sales $",d:"Net sales of the current month (or week / quarter for WoW / QoQ).",t:"Actuals / Plan",s:"Sales feed",g:"Channel x Subcategory x Month",u:"$"},
+  prevMoSalesR:{n:"Prior Month Net Sales $",d:"Net sales of the prior month (or week / quarter).",t:"Actuals / Plan",s:"Sales feed",g:"Channel x Subcategory x Month",u:"$"},
+  buildEdit:{n:"Build Edit (forward week ratio)",d:"Planner week-on-week ratio for a forward week; seeded from LY TY Build.",t:"Plan entry (seeded LY)",s:"Planner entry",g:"Channel x Subcategory x Week",u:"x"},
+  finTgtR:{n:"Finance Target Sales $",d:"Finance's target for the full company by channel and month.",t:"Target load",s:"Finance targets file",g:"Full company x Channel x Month",u:"$"},
+  finRfcstR:{n:"Finance Re-Forecasted Target $",d:"Finance's in-season reforecast of the target.",t:"Target load",s:"Finance reforecast load",g:"Full company x Channel x Month",u:"$"},
+  tdWpSalesR:{n:"Net Sales $ (full company x channel x month)",d:"Net sales of the plan at full company x channel x month.",t:"Plan version",s:"Working plan",g:"Full company x Channel x Month",u:"$"},
+  opSeasonR:{n:"OP Net Sales $ (division x channel group x season)",d:"Locked top-down budget (OP) at division x channel group x season.",t:"Plan version",s:"Locked OP",g:"Division x Channel group x Season",u:"$"},
+  tgtAttrMix:{n:"Target Attribute Mix %",d:"Split of OP across attributes; seeded from LY attribute contribution.",t:"Plan entry (seeded LY)",s:"Planner entry",g:"Attribute x Season",u:"%"},
+  strPct:{n:"Stretch %",d:"Uplift of stretch over target; one value per division, overridable by attribute.",t:"Plan entry",s:"Planner entry",g:"Division / Attribute x Season",u:"%"},
+  moWpSalesR:{n:"Net Sales $ (attribute x season)",d:"Planned net sales for the attribute and season.",t:"Plan version",s:"Working plan",g:"Attribute x Season",u:"$"},
+  transferInU:{n:"Transfers In Units",d:"Units transferred into the node from another region, channel or location.",t:"Actuals / Plan entry",s:"Transfer feed",g:"Channel x Subcategory x Week",u:"U"},
+  transferOutU:{n:"Transfers Out Units",d:"Units transferred out of the node to another region, channel or location.",t:"Actuals / Plan entry",s:"Transfer feed",g:"Channel x Subcategory x Week",u:"U"},
+  invAdjU:{n:"Inventory Adjustments Units",d:"Non-sale stock changes other than shrink: cycle counts, damages, write-offs, QC holds.",t:"Plan entry",s:"Planner entry",g:"Channel x Subcategory x Week",u:"U"},
+  bopTotalR:{n:"Parent BOP Inventory $",d:"BOP of the parent / total node, for inventory mix.",t:"Aggregated",s:"Hierarchy roll-up",g:"Parent x Week",u:"$"},
+  eopTotalR:{n:"Parent EOP Inventory $",d:"EOP of the parent / total node, for inventory mix.",t:"Aggregated",s:"Hierarchy roll-up",g:"Parent x Week",u:"$"},
+  lyEopU:{n:"LY EOP Inventory Units",d:"Closing units last year for the mapped period.",t:"History",s:"Inventory history",g:"Channel x Subcategory x Week",u:"U"},
+  curWkSalesU:{n:"Current Week Sales Units",d:"Units sold in the current week.",t:"Actuals / Plan",s:"Sales feed",g:"Channel x Subcategory x Week",u:"U"},
+  lyStoreCount:{n:"LY Store Count",d:"Stores open in the same period last year.",t:"Master data",s:"Store master",g:"Channel x Week",u:"#"},
+  ccCount:{n:"CC / SKU Count",d:"Distinct style-colours (or SKUs) planned or active.",t:"Plan entry / Master data",s:"Product master / buy log",g:"Channel x Subcategory x Attribute",u:"#"},
+  lyCcCount:{n:"LY CC / SKU Count",d:"Distinct style-colours last year.",t:"History",s:"Product master history",g:"Channel x Subcategory x Attribute",u:"#"},
+});
+const ALO_NEW=[
+/* Sales */
+{id:"sfsPctK",cat:"Sales",fam:"Fulfilment (SFS / BOPIS)",m:"P",name:"SFS / BOPIS % Share",abbr:"SFS %",u:"%",mode:"B",core:"C",sd:"L",alo:"NEW-01-P",
+ desc:"Share of Web sales fulfilled by ship-from-store or buy-online-pick-up-in-store. Editable; replicated to children.",
+ f:"SFS / BOPIS Sales Units ÷ Web Net Sales Units (actuals)  |  plan: input seeded from LY",raw:["sfsPct"],
+ c:V=>V.sfsPct, ex:V=>[["","SFS / BOPIS share (seeded LY)",V.sfsPct,"%"]], x:"{sfsPct}"},
+{id:"sfsR",cat:"Sales",fam:"Fulfilment (SFS / BOPIS)",m:"R",name:"SFS / BOPIS Sales $",abbr:"SFS $",u:"$",mode:"C",core:"C",sd:"C",alo:"NEW-03-R",
+ desc:"Web demand fulfilled from stores, retail $. Shares rebalance to 100%; values spread with Web sales.",
+ f:"Web Net Sales $ × SFS / BOPIS % Share",deps:["sfsPctK"],raw:["webSalesR"],
+ c:(V,K)=>V.webSalesR*K("sfsPctK"), ex:(V,K)=>[["","Web net sales $",V.webSalesR,"$"],["×","SFS / BOPIS share",K("sfsPctK"),"%"]], x:"{webSalesR}*{sfsPctK}"},
+{id:"sfsU",cat:"Sales",fam:"Fulfilment (SFS / BOPIS)",m:"U",name:"SFS / BOPIS Sales Units",abbr:"SFS U",u:"U",mode:"C",core:"C",sd:"C",alo:"NEW-03-U",
+ desc:"Web demand fulfilled from stores, units.",
+ f:"SFS / BOPIS Sales $ ÷ AUR",deps:["sfsR","aur"],
+ c:(V,K)=>K("sfsR")/K("aur"), ex:(V,K)=>[["","SFS / BOPIS sales $",K("sfsR"),"$"],["÷","AUR",K("aur"),"$u"]], x:"{sfsR}/{aur}"},
+{id:"mdPctK",cat:"Sales",fam:"Sales by Price Status",m:"P",name:"Markdown Sales %",abbr:"MD Sls %",u:"%",mode:"B",core:"C",sd:"L",alo:"KPI-067-P",
+ desc:"Share of net sales sold at markdown price status. Editable and replicated to children; Markdown Sales $ follows.",
+ f:"Markdown Sales $ ÷ Net Sales $  |  plan: input seeded from LY",raw:["mdSalesPct"],
+ c:V=>V.mdSalesPct, ex:V=>[["","Markdown sales share (seeded LY)",V.mdSalesPct,"%"]], x:"{mdSalesPct}"},
+{id:"mdSalesR",cat:"Sales",fam:"Sales by Price Status",m:"R",name:"Markdown Sales $",abbr:"MD Sls $",u:"$",mode:"C",core:"C",sd:"C",alo:"KPI-067-R",
+ desc:"Net sales at markdown price status, retail $.",
+ f:"Net Sales $ × Markdown Sales %",deps:["netSales","mdPctK"],
+ c:(V,K)=>K("netSales")*K("mdPctK"), ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["×","Markdown sales %",K("mdPctK"),"%"]], x:"{netSales}*{mdPctK}"},
+{id:"contrChg",cat:"Sales",fam:"Trend & Mix",m:"P",name:"Contribution Change (bps)",abbr:"Contr Δ bps",u:"bps",mode:"C",core:"O",sd:"C",alo:"KPI-013",
+ desc:"Change in a node's share of its parent versus last year, in basis points.",
+ f:"(Contribution % − LY Contribution %) × 10,000",deps:["salesMix"],raw:["lyContrPct"],
+ c:(V,K)=>(K("salesMix")-V.lyContrPct)*10000, ex:(V,K)=>[["","Contribution %",K("salesMix"),"%"],["−","LY contribution %",V.lyContrPct,"%"],["×","Basis points",10000,"#"]], x:"({salesMix}-{lyContrPct})*10000"},
+{id:"histBuild",cat:"Sales",fam:"Trend & Mix",m:"P",name:"Historical Build (WoW / MoM / QoQ)",abbr:"Hist Build",u:"x",mode:"C",core:"C",sd:"C",alo:"NEW-01",
+ desc:"Period-over-period growth within the same year at week, month or quarter. Display only; forward shape is edited through Build Edit. Example shows month over month.",
+ f:"Net Sales $ (period) ÷ Net Sales $ (prior period)",alt:["WoW at week, MoM at month, QoQ at quarter"],raw:["curMoSalesR","prevMoSalesR"],
+ c:V=>V.curMoSalesR/V.prevMoSalesR, ex:V=>[["","Current month net sales $",V.curMoSalesR,"$"],["÷","Prior month net sales $",V.prevMoSalesR,"$"]], x:"{curMoSalesR}/{prevMoSalesR}"},
+{id:"buildEditK",cat:"Sales",fam:"Trend & Mix",m:"P",name:"Build Edit (forward weeks)",abbr:"Bld Edit",u:"x",mode:"E",core:"C",sd:"L",alo:"ADD-03",
+ desc:"Planner shapes forward weeks with a week-on-week ratio. Next-week sales = this week's plan × Build Edit; dollars re-solve week by week.",
+ f:"Planner entry (seeded from LY TY Build)  →  Net Sales $ [wk] = Net Sales $ [wk − 1] × Build Edit",raw:["buildEdit"],
+ c:V=>V.buildEdit, ex:V=>[["","Entered week-on-week ratio",V.buildEdit,"x"]], x:"{buildEdit}"},
+{id:"nonCompSpread",cat:"Sales",fam:"Comparable Sales",m:"P",name:"Non-Comp Spread %",abbr:"Non-Comp Sprd",u:"%",mode:"C",core:"O",sd:"C",alo:"KPI-016",
+ desc:"Growth coming from non-comp (new) doors: total growth less comp growth.",
+ f:"Sales Variance to LY % − Comp Sales Growth %",deps:["varLyPct","compGrowth"],
+ c:(V,K)=>K("varLyPct")-K("compGrowth"), ex:(V,K)=>[["","Sales variance to LY %",K("varLyPct"),"%"],["−","Comp sales growth %",K("compGrowth"),"%"]], x:"{varLyPct}-{compGrowth}"},
+{id:"varLly",cat:"Sales",fam:"Sales Variance",m:"R",name:"Sales Variance to LLY %",abbr:"Var LLY %",u:"%",mode:"C",core:"O",sd:"C",alo:"KPI-028",
+ desc:"Two-year growth.",
+ f:"Net Sales $ ÷ LLY Net Sales $ − 1",deps:["netSales"],raw:["llySalesR"],
+ c:(V,K)=>K("netSales")/V.llySalesR-1, ex:(V,K)=>[["","Net sales $",K("netSales"),"$"],["÷","LLY net sales $",V.llySalesR,"$"],["−","1",1,"#"]], x:"{netSales}/{llySalesR}-1"},
+/* Targets */
+{id:"finTgt",cat:"Targets",fam:"Top Down",m:"R",name:"Finance Target Sales $",abbr:"Fin Tgt $",u:"$",mode:"E",core:"C",sd:"T",alo:"NEW-04",
+ desc:"Finance's target for the full company by channel and month; the top-down plan is balanced to it before the OP lock.",
+ f:"Loaded input (full company × channel × month)",raw:["finTgtR"],c:V=>V.finTgtR,ex:V=>[["","Finance target $",V.finTgtR,"$"]],x:"{finTgtR}"},
+{id:"finRfcst",cat:"Targets",fam:"Top Down",m:"R",name:"Finance Re-Forecasted Target $",abbr:"Fin Rfcst $",u:"$",mode:"C",core:"O",sd:"T",alo:"TD-01",
+ desc:"Finance's in-season reforecast, loaded as a measure (not a version).",
+ f:"Loaded in-season (full company × channel × month)",raw:["finRfcstR"],c:V=>V.finRfcstR,ex:V=>[["","Finance reforecast $",V.finRfcstR,"$"]],x:"{finRfcstR}"},
+{id:"tdVsFin",cat:"Targets",fam:"Top Down",m:"R",name:"Net Sales vs Finance Target $",abbr:"Sls vs Fin $",u:"$",mode:"C",core:"C",sd:"C",alo:"TD-02-R",neg:1,
+ desc:"Pre-season balance check of planned net sales against Finance's target before the OP lock.",
+ f:"Net Sales $ − Finance Target Sales $",deps:["finTgt"],raw:["tdWpSalesR"],
+ c:(V,K)=>V.tdWpSalesR-K("finTgt"), ex:(V,K)=>[["","Net sales $ (full company)",V.tdWpSalesR,"$"],["−","Finance target $",K("finTgt"),"$"]], x:"{tdWpSalesR}-{finTgt}"},
+{id:"tdVsFinPct",cat:"Targets",fam:"Top Down",m:"P",name:"Net Sales vs Finance Target %",abbr:"Sls vs Fin %",u:"%",mode:"C",core:"O",sd:"C",alo:"TD-02-P",neg:1,
+ desc:"The same balance check as a %.",
+ f:"Net Sales $ ÷ Finance Target Sales $ − 1",deps:["finTgt"],raw:["tdWpSalesR"],
+ c:(V,K)=>V.tdWpSalesR/K("finTgt")-1, ex:(V,K)=>[["","Net sales $ (full company)",V.tdWpSalesR,"$"],["÷","Finance target $",K("finTgt"),"$"],["−","1",1,"#"]], x:"{tdWpSalesR}/{finTgt}-1"},
+{id:"tgtMix",cat:"Targets",fam:"Top Down",m:"P",name:"Target Attribute Mix %",abbr:"Tgt Attr Mix",u:"%",mode:"E",core:"C",sd:"L",alo:"MO-01",
+ desc:"Split of the locked OP across attributes within division × channel group × season. Edited once per season, then frozen; attributes rebalance to 100%.",
+ f:"Planner entry seeded from LY attribute contribution; Σ attributes = 100%",raw:["tgtAttrMix"],c:V=>V.tgtAttrMix,ex:V=>[["","Attribute share of OP",V.tgtAttrMix,"%"]],x:"{tgtAttrMix}"},
+{id:"tgtSales",cat:"Targets",fam:"Top Down",m:"R",name:"Target Sales $",abbr:"Tgt Sls $",u:"$",mode:"C",core:"C",sd:"C",alo:"NEW-06",
+ desc:"The locked top-down budget (OP) split by attribute for the season. Not stored; totals always tie to OP.",
+ f:"OP Net Sales $ (division × channel group × season) × Target Attribute Mix %",deps:["tgtMix"],raw:["opSeasonR"],
+ c:(V,K)=>V.opSeasonR*K("tgtMix"), ex:(V,K)=>[["","OP net sales $",V.opSeasonR,"$"],["×","Target attribute mix %",K("tgtMix"),"%"]], x:"{opSeasonR}*{tgtMix}"},
+{id:"strPctK",cat:"Targets",fam:"Top Down",m:"P",name:"Stretch %",abbr:"Stretch %",u:"%",mode:"E",core:"O",sd:"P",alo:"MO-02",
+ desc:"Uplift of stretch over target; one value per division, overridable by attribute.",
+ f:"Planner entry",raw:["strPct"],c:V=>V.strPct,ex:V=>[["","Entered stretch %",V.strPct,"%"]],x:"{strPct}"},
+{id:"strSales",cat:"Targets",fam:"Top Down",m:"R",name:"Stretch Sales $",abbr:"Stretch $",u:"$",mode:"B",core:"O",sd:"C",alo:"NEW-07",
+ desc:"Aspiration above OP for the season, per attribute. Direct override by attribute allowed.",
+ f:"Target Sales $ × (1 + Stretch %)",deps:["tgtSales","strPctK"],
+ c:(V,K)=>K("tgtSales")*(1+K("strPctK")), ex:(V,K)=>[["","Target sales $",K("tgtSales"),"$"],["×","1 + stretch %",1+K("strPctK"),"%"]], x:"{tgtSales}*(1+{strPctK})"},
+{id:"gapStr",cat:"Targets",fam:"Top Down",m:"R",name:"Gap to Stretch $",abbr:"Gap Str $",u:"$",mode:"C",core:"O",sd:"C",alo:"MO-03",
+ desc:"How far planned net sales are from stretch.",
+ f:"Stretch Sales $ − Net Sales $",alt:["In-season: Stretch Sales $ − (season-to-date actuals + remaining plan)"],deps:["strSales"],raw:["moWpSalesR"],
+ c:(V,K)=>K("strSales")-V.moWpSalesR, ex:(V,K)=>[["","Stretch sales $",K("strSales"),"$"],["−","Net sales $ (attribute, season)",V.moWpSalesR,"$"]], x:"{strSales}-{moWpSalesR}"},
+{id:"vsTgt",cat:"Targets",fam:"Top Down",m:"P",name:"+/- Target %",abbr:"vs Tgt %",u:"%",mode:"C",core:"C",sd:"C",alo:"KPI-029",neg:1,
+ desc:"Planned net sales against the budget (OP) by attribute.",
+ f:"Net Sales $ ÷ Target Sales $ − 1",alt:["In-season: season-to-date actuals ÷ season-to-date target − 1"],deps:["tgtSales"],raw:["moWpSalesR"],
+ c:(V,K)=>V.moWpSalesR/K("tgtSales")-1, ex:(V,K)=>[["","Net sales $ (attribute, season)",V.moWpSalesR,"$"],["÷","Target sales $",K("tgtSales"),"$"],["−","1",1,"#"]], x:"{moWpSalesR}/{tgtSales}-1"},
+{id:"vsStr",cat:"Targets",fam:"Top Down",m:"P",name:"+/- Stretch %",abbr:"vs Str %",u:"%",mode:"C",core:"O",sd:"C",alo:"KPI-030",neg:1,
+ desc:"Planned net sales against the stretch goal.",
+ f:"Net Sales $ ÷ Stretch Sales $ − 1",deps:["strSales"],raw:["moWpSalesR"],
+ c:(V,K)=>V.moWpSalesR/K("strSales")-1, ex:(V,K)=>[["","Net sales $ (attribute, season)",V.moWpSalesR,"$"],["÷","Stretch sales $",K("strSales"),"$"],["−","1",1,"#"]], x:"{moWpSalesR}/{strSales}-1"},
+
+/* Reductions */
+/* Inventory flow components */
+{id:"xferInU",cat:"Inventory",fam:"Transfers",m:"U",name:"Transfers In Units",abbr:"Xfer In U",u:"U",mode:"E",core:"C",sd:"P",
+ desc:"Units moved into the node from another region, channel or location. Transfers in and out net to zero at total.",
+ f:"Planner entry  |  actuals: transfer feed",raw:["transferInU"],c:V=>V.transferInU,ex:V=>[["","Transfers In units",V.transferInU,"U"]],x:"{transferInU}"},
+{id:"xferInR",cat:"Inventory",fam:"Transfers",m:"R",name:"Transfers In $",abbr:"Xfer In $",u:"$",mode:"C",core:"C",sd:"C",
+ desc:"Transfers In at retail.",f:"Transfers In Units × Inventory AUR",deps:["xferInU","invAur"],
+ c:(V,K)=>K("xferInU")*K("invAur"), ex:(V,K)=>[["","Transfers In units",K("xferInU"),"U"],["×","Inventory AUR",K("invAur"),"$u"]], x:"{xferInU}*{invAur}"},
+{id:"xferInC",cat:"Inventory",fam:"Transfers",m:"C",name:"Transfers In Cost $",abbr:"Xfer In C",u:"$",mode:"C",core:"C",sd:"C",
+ desc:"Transfers In at cost.",f:"Transfers In Units × AUC",deps:["xferInU","auc"],
+ c:(V,K)=>K("xferInU")*K("auc"), ex:(V,K)=>[["","Transfers In units",K("xferInU"),"U"],["×","AUC",K("auc"),"$u"]], x:"{xferInU}*{auc}"},
+{id:"xferOutU",cat:"Inventory",fam:"Transfers",m:"U",name:"Transfers Out Units",abbr:"Xfer Out U",u:"U",mode:"E",core:"C",sd:"P",
+ desc:"Units moved out of the node from to another region, channel or location. Transfers in and out net to zero at total.",
+ f:"Planner entry  |  actuals: transfer feed",raw:["transferOutU"],c:V=>V.transferOutU,ex:V=>[["","Transfers Out units",V.transferOutU,"U"]],x:"{transferOutU}"},
+{id:"xferOutR",cat:"Inventory",fam:"Transfers",m:"R",name:"Transfers Out $",abbr:"Xfer Out $",u:"$",mode:"C",core:"C",sd:"C",
+ desc:"Transfers Out at retail.",f:"Transfers Out Units × Inventory AUR",deps:["xferOutU","invAur"],
+ c:(V,K)=>K("xferOutU")*K("invAur"), ex:(V,K)=>[["","Transfers Out units",K("xferOutU"),"U"],["×","Inventory AUR",K("invAur"),"$u"]], x:"{xferOutU}*{invAur}"},
+{id:"xferOutC",cat:"Inventory",fam:"Transfers",m:"C",name:"Transfers Out Cost $",abbr:"Xfer Out C",u:"$",mode:"C",core:"C",sd:"C",
+ desc:"Transfers Out at cost.",f:"Transfers Out Units × AUC",deps:["xferOutU","auc"],
+ c:(V,K)=>K("xferOutU")*K("auc"), ex:(V,K)=>[["","Transfers Out units",K("xferOutU"),"U"],["×","AUC",K("auc"),"$u"]], x:"{xferOutU}*{auc}"},
+{id:"sfsFulU",cat:"Inventory",fam:"SFS Inventory Fulfilment",m:"U",name:"SFS Inventory Fulfilment Units",abbr:"SFS Ful U",u:"U",mode:"C",core:"C",sd:"C",alo:"ADD-09-U",
+ desc:"Store stock used to fulfil Web orders. Relieves the fulfilling store's EOP and is already inside Web sales, so it is not deducted again at total level.",
+ f:"SFS / BOPIS Sales Units allocated to fulfilling stores",deps:["sfsU"],c:(V,K)=>K("sfsU"),ex:(V,K)=>[["","SFS / BOPIS sales units",K("sfsU"),"U"]],x:"{sfsU}"},
+{id:"sfsFulR",cat:"Inventory",fam:"SFS Inventory Fulfilment",m:"R",name:"SFS Inventory Fulfilment $",abbr:"SFS Ful $",u:"$",mode:"C",core:"C",sd:"C",alo:"ADD-09-R",
+ desc:"SFS fulfilment at retail.",f:"SFS Inventory Fulfilment Units × AUR",deps:["sfsFulU","aur"],
+ c:(V,K)=>K("sfsFulU")*K("aur"), ex:(V,K)=>[["","SFS fulfilment units",K("sfsFulU"),"U"],["×","AUR",K("aur"),"$u"]], x:"{sfsFulU}*{aur}"},
+{id:"sfsFulC",cat:"Inventory",fam:"SFS Inventory Fulfilment",m:"C",name:"SFS Inventory Fulfilment Cost $",abbr:"SFS Ful C",u:"$",mode:"C",core:"C",sd:"C",alo:"ADD-09-C",
+ desc:"SFS fulfilment at cost.",f:"SFS Inventory Fulfilment Units × AUC",deps:["sfsFulU","auc"],
+ c:(V,K)=>K("sfsFulU")*K("auc"), ex:(V,K)=>[["","SFS fulfilment units",K("sfsFulU"),"U"],["×","AUC",K("auc"),"$u"]], x:"{sfsFulU}*{auc}"},
+{id:"invAdjPU",cat:"Inventory",fam:"Inventory Adjustments (planned)",m:"U",name:"Inventory Adjustments Units",abbr:"Inv Adj U",u:"U",mode:"E",core:"C",sd:"LP",alo:"ADD-06-U",neg:1,
+ desc:"Non-sale stock changes other than shrink: cycle counts, damages, write-offs, QC holds. User entry only; there is no data feed. Flows into EOP and COGS; negative is a loss of stock.",
+ f:"Planner entry (user entry only, no data feed)",raw:["invAdjU"],c:V=>V.invAdjU,ex:V=>[["","Planned adjustment units",V.invAdjU,"U"]],x:"{invAdjU}"},
+{id:"invAdjPR",cat:"Inventory",fam:"Inventory Adjustments (planned)",m:"R",name:"Inventory Adjustments $",abbr:"Inv Adj $ (plan)",u:"$",mode:"C",core:"C",sd:"C",alo:"ADD-06-R",neg:1,
+ desc:"Inventory adjustments at retail. Negative is a loss of stock.",f:"Inventory Adjustments Units × Inventory AUR",deps:["invAdjPU","invAur"],
+ c:(V,K)=>K("invAdjPU")*K("invAur"), ex:(V,K)=>[["","Adjustment units",K("invAdjPU"),"U"],["×","Inventory AUR",K("invAur"),"$u"]], x:"{invAdjPU}*{invAur}"},
+{id:"invAdjPC",cat:"Inventory",fam:"Inventory Adjustments (planned)",m:"C",name:"Inventory Adjustments Cost $",abbr:"Inv Adj C",u:"$",mode:"C",core:"C",sd:"C",alo:"ADD-06-C",neg:1,
+ desc:"Planned adjustments at cost.",f:"Inventory Adjustments Units × AUC",deps:["invAdjPU","auc"],
+ c:(V,K)=>K("invAdjPU")*K("auc"), ex:(V,K)=>[["","Adjustment units",K("invAdjPU"),"U"],["×","AUC",K("auc"),"$u"]], x:"{invAdjPU}*{auc}"},
+{id:"invContr",cat:"Inventory",fam:"Inventory Mix & Comparison",m:"P",name:"Inventory Contribution % (EOP)",abbr:"EOP Contr %",u:"%",mode:"C",core:"O",sd:"C",alo:"KPI-040",
+ desc:"Share of closing stock held by the node (e.g. attribute) within its parent.",
+ f:"EOP $ (node) ÷ EOP $ (parent)",alt:["BOP basis: BOP $ (node) ÷ BOP $ (parent)"],deps:["eop"],raw:["eopTotalR"],
+ c:(V,K)=>K("eop")/V.eopTotalR, ex:(V,K)=>[["","EOP $",K("eop"),"$"],["÷","Parent EOP $",V.eopTotalR,"$"]], x:"{eop}/{eopTotalR}"},
+{id:"eohVsLy",cat:"Inventory",fam:"Inventory Mix & Comparison",m:"U",name:"EOH vs LY %",abbr:"EOH vs LY",u:"%",mode:"C",core:"O",sd:"C",alo:"KPI-041",neg:1,
+ desc:"Closing stock units against last year.",
+ f:"EOP Units ÷ LY EOP Units − 1",deps:["eopUnits"],raw:["lyEopU"],
+ c:(V,K)=>K("eopUnits")/V.lyEopU-1, ex:(V,K)=>[["","EOP units",K("eopUnits"),"U"],["÷","LY EOP units",V.lyEopU,"U"],["−","1",1,"#"]], x:"{eopUnits}/{lyEopU}-1"},
+
+/* Productivity */
+{id:"stWk",cat:"Productivity",fam:"Sell-Through",m:"U",name:"Sell-Through % (weekly)",abbr:"ST Wk %",u:"%",mode:"C",core:"O",sd:"C",alo:"KPI-045",
+ desc:"Weekly sell-through on stock in hand.",
+ f:"Sales Units [wk] ÷ (Sales Units [wk] + EOP Units [wk])",deps:["eopUnits"],raw:["curWkSalesU"],
+ c:(V,K)=>V.curWkSalesU/(V.curWkSalesU+K("eopUnits")), ex:(V,K)=>[["","Week sales units",V.curWkSalesU,"U"],["÷","Week sales + EOP units",V.curWkSalesU+K("eopUnits"),"U"]], x:"{curWkSalesU}/({curWkSalesU}+{eopUnits})"},
+{id:"strCnt",cat:"Productivity",fam:"Store & Assortment Productivity",m:"N",name:"Store Count",abbr:"Str Cnt",u:"#",mode:"E",core:"C",sd:"A",alo:"KPI-068",
+ desc:"Number of open stores per channel and week. Future openings and closures are planned from admin. Needed for comp % and per-store productivity.",
+ f:"Store master count of open stores  |  plan: openings / closures entered in admin",raw:["storeCount"],c:V=>V.storeCount,ex:V=>[["","Open stores",V.storeCount,"#"]],x:"{storeCount}"},
+{id:"pasVsLy",cat:"Productivity",fam:"Store & Assortment Productivity",m:"P",name:"PAS Variance to LY %",abbr:"PAS vs LY",u:"%",mode:"B",core:"C",sd:"C",alo:"KPI-071",neg:1,
+ desc:"Per-average-store productivity against LY. Editable as a PAS % increase: store sales = LY APS × (1 + PAS %) × TY store count.",
+ f:"(Store Net Sales $ ÷ Store Count) ÷ (LY Store Net Sales $ ÷ LY Store Count) − 1",deps:["netSales","strCnt"],raw:["lySalesR","lyStoreCount"],
+ c:(V,K)=>(K("netSales")/K("strCnt"))/(V.lySalesR/V.lyStoreCount)-1, ex:(V,K)=>[["","Sales per store",K("netSales")/K("strCnt"),"$"],["÷","LY sales per store",V.lySalesR/V.lyStoreCount,"$"],["−","1",1,"#"]],
+ x:"({netSales}/{strCnt})/({lySalesR}/{lyStoreCount})-1"},
+{id:"ccCnt",cat:"Productivity",fam:"Store & Assortment Productivity",m:"N",name:"CC / SKU Count",abbr:"CC Cnt",u:"#",mode:"E",core:"O",sd:"P",alo:"KPI-076",
+ desc:"Number of style-colours (or SKUs) in the plan; planned from the buy log.",
+ f:"Distinct style-colours per node  |  plan: CC count from the buy log",raw:["ccCount"],c:V=>V.ccCount,ex:V=>[["","Planned style-colours",V.ccCount,"#"]],x:"{ccCount}"},
+{id:"prodSku",cat:"Productivity",fam:"Store & Assortment Productivity",m:"P",name:"Productivity per Avg SKU vs LY %",abbr:"Sls/CC vs LY",u:"%",mode:"C",core:"O",sd:"C",alo:"KPI-072",neg:1,
+ desc:"Sales per style-colour against LY; separates assortment breadth from depth.",
+ f:"(Net Sales $ ÷ CC Count) ÷ (LY Net Sales $ ÷ LY CC Count) − 1",deps:["netSales","ccCnt"],raw:["lySalesR","lyCcCount"],
+ c:(V,K)=>(K("netSales")/K("ccCnt"))/(V.lySalesR/V.lyCcCount)-1, ex:(V,K)=>[["","Sales per CC",K("netSales")/K("ccCnt"),"$"],["÷","LY sales per CC",V.lySalesR/V.lyCcCount,"$"],["−","1",1,"#"]],
+ x:"({netSales}/{ccCnt})/({lySalesR}/{lyCcCount})-1"},
+{id:"prodSkuStr",cat:"Productivity",fam:"Store & Assortment Productivity",m:"P",name:"Productivity per Avg SKU per Store vs LY %",abbr:"Sls/CC/Str vs LY",u:"%",mode:"C",core:"O",sd:"C",alo:"KPI-073",neg:1,
+ desc:"Sales per style-colour per store against LY.",
+ f:"(Store Net Sales $ ÷ CC Count ÷ Store Count) ÷ (LY Store Net Sales $ ÷ LY CC Count ÷ LY Store Count) − 1",deps:["netSales","ccCnt","strCnt"],raw:["lySalesR","lyCcCount","lyStoreCount"],
+ c:(V,K)=>(K("netSales")/K("ccCnt")/K("strCnt"))/(V.lySalesR/V.lyCcCount/V.lyStoreCount)-1,
+ ex:(V,K)=>[["","Sales per CC per store",K("netSales")/K("ccCnt")/K("strCnt"),"$"],["÷","LY sales per CC per store",V.lySalesR/V.lyCcCount/V.lyStoreCount,"$"],["−","1",1,"#"]],
+ x:"({netSales}/{ccCnt}/{strCnt})/({lySalesR}/{lyCcCount}/{lyStoreCount})-1"},
+
+/* Open to Buy: on order and bottom-up outlook */
+{id:"ooR",cat:"Open to Buy",fam:"On Order",m:"R",name:"On Order $",abbr:"OO $",u:"$",mode:"C",core:"C",sd:"A",alo:"KPI-037-R",
+ desc:"Open purchase orders not yet received, by expected receipt week. Loaded from the PO feed; not planned.",
+ f:"Open PO retail value (feed)",raw:["onOrderR"],c:V=>V.onOrderR,ex:V=>[["","Open PO retail",V.onOrderR,"$"]],x:"{onOrderR}"},
+{id:"ooU",cat:"Open to Buy",fam:"On Order",m:"U",name:"On Order Units",abbr:"OO U",u:"U",mode:"C",core:"C",sd:"A",alo:"KPI-037-U",
+ desc:"Open PO quantity (ordered − received).",f:"Open PO quantity (feed)",raw:["onOrderU"],c:V=>V.onOrderU,ex:V=>[["","Open PO units",V.onOrderU,"U"]],x:"{onOrderU}"},
+{id:"ooC",cat:"Open to Buy",fam:"On Order",m:"C",name:"On Order Cost $",abbr:"OO C",u:"$",mode:"C",core:"C",sd:"A",alo:"KPI-037-C",
+ desc:"Open PO cost value.",f:"Open PO cost value (feed)",raw:["onOrderC"],c:V=>V.onOrderC,ex:V=>[["","Open PO cost",V.onOrderC,"$"]],x:"{onOrderC}"},
+{id:"ooAur",cat:"Open to Buy",fam:"On Order",m:"R",name:"Open Order AUR",abbr:"OO AUR",u:"$u",mode:"C",core:"C",sd:"A",alo:"ADD-04",
+ desc:"Average retail of open purchase orders.",f:"On Order $ ÷ On Order Units",deps:["ooR","ooU"],
+ c:(V,K)=>K("ooR")/K("ooU"), ex:(V,K)=>[["","On order $",K("ooR"),"$"],["÷","On order units",K("ooU"),"U"]], x:"{ooR}/{ooU}"},
+{id:"ooAuc",cat:"Open to Buy",fam:"On Order",m:"C",name:"Open Order AUC",abbr:"OO AUC",u:"$u",mode:"C",core:"C",sd:"A",alo:"ADD-05",
+ desc:"Average cost of open purchase orders.",f:"On Order Cost $ ÷ On Order Units",deps:["ooC","ooU"],
+ c:(V,K)=>K("ooC")/K("ooU"), ex:(V,K)=>[["","On order cost $",K("ooC"),"$"],["÷","On order units",K("ooU"),"U"]], x:"{ooC}/{ooU}"},
+];
+const ALO_SPECIFIC=["sfsPctK","sfsR","sfsU","sfsFulU","sfsFulR","sfsFulC","histBuild","buildEditK","tdVsFin","tdVsFinPct","tgtMix","tgtSales","strPctK","strSales","gapStr","vsTgt","vsStr"];
+ALO_NEW.forEach(k=>{k.origin=ALO_SPECIFIC.includes(k.id)?"ALO":"Standard"});
+KPIS.push(...ALO_NEW);
+
+KPIS.forEach(k=>{k.deps=k.deps||[];k.raw=k.raw||[];k.alt=k.alt||[]});
+const BY=Object.fromEntries(KPIS.map(k=>[k.id,k]));
+
+
+/* core/optional flag and seeding method */
+const SEED={L:"LY",F:"Forecast",LF:"LY or Forecast",FC:"Forecast, else calculated",C:"Not seeded (calculated)",P:"Not seeded (planner entry)",A:"Not seeded (actuals / prior EOP)"};
+Object.assign(SEED,{S:"LY (shift calendar)",T:"Target load",AI:"Forecast (AI)",LP:"LY, else planner entry"});
+const META=`netSales C LF|netSalesCost C C|netSalesU C LF|aur C LF|auc C LF|returnsK C P|returnsUK O C|returnsC O C|returnsUPct C L|varLy C C|varLyPct C C|varLyU O C|varLyUPct O C|varOpPct C C|diffOp C C|compSales C L|compGrowth C C|compMix O L|nonComp O C|nonCompPct O L|salesPerStore C C|salesPerStoreU O C|salesSqft O C|salesMix C L|build O C|imu C L|gafsR O C|gafsC O C|cogs C C|gm C C|gmPct C C|gmroi C C|totalMd C P|totalMdPct C LF|mdPosPct C L|mdPermPct C L|shrink C P|shrinkUK O C|shrinkCost O C|bop C A|bopCost C A|bopUnits C A|eop C FC|eopCost C C|eopUnits C FC|rcpt C L|rcptCost C C|rcptUnits C C|avgInvR C C|avgInvC C C|avgInvU O C|invStore O C|invStoreU O C|sellThru C C|sellThruU O C|turn C C|turnC O C|turnU O C|annTurn O C|ss C C|ssC O C|ssU O C|woh O L|fwos C L|fwosU O L|fwdCover O C|mos O C|tgtWosK O P|tgtEop O C|tgtEopC O C|tgtEopU O C|fresh O C|rcptSales O C|ooAdj C P|otb C C|otbC C C|otbU O C|cumOtb O C`;
+META.split("|").forEach(t=>{const [id,c,sd]=t.split(" ");const k=BY[id];if(!k)throw new Error("meta "+id);if(!k.origin){k.core=c;k.sd=sd}});
+KPIS.forEach(k=>{if(!k.core)throw new Error("no meta "+k.id)});
+const VARNOTE="Can also be calculated as part of the generic variance KPI (any measure against any version: X − Y, or X ÷ Y − 1).";
+["varLy","varLyPct","varLyU","varLyUPct","varOpPct","diffOp"].forEach(id=>BY[id].note=VARNOTE);
+const FAMNOTE={"Sales Variance":VARNOTE};
+
+/* KPIs missing from the current demo environment (ALO demo gaps PDF and hands-on prep deck) */
+const MISSING=["auc","compGrowth","salesMix","histBuild","build","buildEditK","sfsPctK","sfsR","sfsU",
+ "returnsK","returnsUK","returnsC","returnsUPct","shrinkPctK","varLyPct","pasVsLy","varLly",
+ "finRfcst","tdVsFin","tdVsFinPct","fwosU","tgtWosK","tgtEop","tgtEopU","tgtEopC",
+ "ooAur","ooAuc","invAdjPU","invAdjPR","invAdjPC","xferInU","xferInR","xferInC","xferOutU","xferOutR","xferOutC","sfsFulU","sfsFulR","sfsFulC"];
+MISSING.forEach(id=>{if(!BY[id])throw new Error("missing "+id);BY[id].demo=1});
+/* AI Forecast column: AI-forecast fed, LY seeded, or not seeded */
+const AI_FCST=["netSales","netSalesU"];
+KPIS.forEach(k=>{k.ai=AI_FCST.includes(k.id)?"Yes":(k.mode!=="C"&&["L","LF","LP"].includes(k.sd)&&k.id!=="aur"?"LY Seeded":"")});
+/* ALO master references for KPIs kept from the standard library */
+const ALOREF={netSales:"KPI-001",netSalesU:"KPI-002",netSalesCost:"KPI-003",returnsUK:"KPI-006a",returnsK:"KPI-006b",returnsC:"KPI-006c",returnsUPct:"KPI-007a",aur:"KPI-061",auc:"KPI-062",gmPct:"KPI-064",imu:"KPI-066",salesMix:"KPI-011",compGrowth:"KPI-015",build:"KPI-019 / KPI-017",varLyPct:"KPI-027 / NEW-02",bop:"KPI-035-R",bopUnits:"KPI-035-U",bopCost:"KPI-035-C",rcpt:"KPI-038-R",rcptUnits:"KPI-038-U",rcptCost:"KPI-038-C",eop:"KPI-039-R",eopUnits:"KPI-039-U",eopCost:"KPI-039-C",shrink:"KPI-049-R",woh:"KPI-043",fwos:"KPI-042",fwosU:"KPI-042",turn:"KPI-048",annTurn:"KPI-048",sellThruU:"KPI-044",otb:"KPI-053-R",otbU:"KPI-053-U",otbC:"KPI-053-C",reqRcpt:"ADD-11-R",reqRcptU:"ADD-11-U",reqRcptC:"ADD-11-C",salesPerStore:"KPI-069-R",salesPerStoreU:"KPI-069-U"};
+KPIS.forEach(k=>{if(!k.origin)k.origin="Standard";if(k.id==="salesSqft")k.origin="ALO";if(ALOREF[k.id])k.alo=ALOREF[k.id]});
+
+
+/* evaluator over any scenario */
+function evaluator(S){const memo={};const K=id=>{if(id in memo)return memo[id];return memo[id]=BY[id].c(S,K)};return K}
+const K=evaluator(V);
+
+function closure(id,seen=new Set()){
+  const k=BY[id],raw=new Set(k.raw),ks=new Set([id]);
+  if(seen.has(id))return {raw:new Set(),k:new Set()};seen.add(id);
+  for(const d of k.deps){const r=closure(d,seen);r.raw.forEach(x=>raw.add(x));r.k.forEach(x=>ks.add(x))}
+  return {raw,k:ks};
+}
+
+/* ===== formatting ===== */
+const nf0=new Intl.NumberFormat("en-US",{maximumFractionDigits:0});
+function fmt(v,u){
+  if(u==="$") return (v<0?"−$":"$")+nf0.format(Math.abs(Math.round(v)));
+  if(u==="$u") return "$"+v.toFixed(2);
+  if(u==="%") return (v*100).toFixed(Math.abs(v)<0.1&&v!==0?2:1)+"%";
+  if(u==="x") return v.toFixed(2)+"x";
+  if(u==="wks") return v.toFixed(1)+" wks";
+  if(u==="mo") return v.toFixed(2)+" months";
+  if(u==="bps") return Math.round(v)+" bps";
+  if(u==="U") return nf0.format(Math.round(v))+" u";
+  return nf0.format(v);
+}
+function exText(k){return k.ex(V,K).map(([o,l,v,u])=>(o?o+" ":"")+l+" "+fmt(v,u)).join("  ")+"  = "+fmt(K(k.id),k.u)}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=s=>document.querySelector(s);
+
+/* ===== state & render ===== */
+const sel=new Set(),opened=new Set(); let q="",mF="",modeF="",coreF="",origF="",demoF="";
+function seg(id,opts,set){const box=$(id);opts.forEach(([v,l],i)=>{const b=document.createElement("button");b.textContent=l;b.dataset.v=v;b.setAttribute("aria-pressed",i?"false":"true");b.onclick=()=>{[...box.children].forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));set(v);render()};box.appendChild(b)})}
+seg("#mode",[["","Any mode"],["E","Editable"],["B","Editable + Calc"],["C","Calculated"]],v=>modeF=v);
+seg("#orig",[["","All origins"],["Standard","Standard"],["ALO","ALO Specific"]],v=>origF=v);
+seg("#demo",[["","All KPIs"],["1","Missing from Demo"]],v=>demoF=v);
+function visible(){const qq=q.trim().toLowerCase();return KPIS.filter(k=>(!mF||k.m===mF)&&(!modeF||k.mode===modeF)&&(!coreF||k.core===coreF)&&(!origF||k.origin===origF)&&(!demoF||k.demo)&&(!qq||(k.name+" "+k.abbr+" "+k.f+" "+k.fam+" "+k.desc).toLowerCase().includes(qq)))}
+function render(){
+  if($("#nVis"))$("#nVis").textContent=visible().length;
+  const vis=visible(),list=$("#list");list.innerHTML="";
+  $("#toc").innerHTML=CATS.map(c=>{const n=vis.filter(k=>k.cat===c).length;return n?'<a href="#c-'+c.replace(/\W/g,"")+'">'+c+'<span>'+n+'</span></a>':""}).join("");
+  if(!vis.length){list.innerHTML='<p class="empty">Nothing matches. Clear the search or filters to see all '+KPIS.length+' KPIs.</p>';return}
+  CATS.forEach(cat=>{
+    const items=vis.filter(k=>k.cat===cat);if(!items.length)return;
+    const sec=document.createElement("section");sec.className="cat";sec.id="c-"+cat.replace(/\W/g,"");
+    sec.innerHTML="<h2>"+cat+"</h2>";
+    const fams=[...new Set(items.map(k=>k.fam))];
+    fams.forEach(f=>{
+      const fk=items.filter(k=>k.fam===f),all=fk.every(k=>sel.has(k.id));
+      const d=document.createElement("div");d.className="fam";
+      d.innerHTML='<div class="famhead"><h3>'+esc(f)+'</h3>'+(fk.length>1?'<button class="fambtn'+(all?' on':'')+'">'+(all?"Clear family":"Select family")+'</button>':'')+'</div>'+(FAMNOTE[f]?'<p class="famnote">'+esc(FAMNOTE[f])+'</p>':'');
+      const b=d.querySelector(".fambtn");if(b)b.onclick=()=>{fk.forEach(k=>all?sel.delete(k.id):sel.add(k.id));update();render()};
+      fk.forEach(k=>d.appendChild(row(k)));sec.appendChild(d);
+    });
+    list.appendChild(sec);
+  });
+}
+function row(k){
+  const el=document.createElement("div");el.className="kpi"+(sel.has(k.id)?" on":"")+(opened.has(k.id)?" open":"");
+  const lines=k.ex(V,K);
+  const ex=lines.map(([o,l,v,u])=>'<div class="ln"><span class="op">'+o+'</span><span>'+esc(l)+'</span><span class="v">'+fmt(v,u)+'</span></div>').join("")+'<div class="ln tot'+(k.neg&&K(k.id)<0?' neg':'')+'"><span class="op">=</span><span>'+esc(k.abbr)+(k.neg&&K(k.id)<0?' (overbought)':'')+'</span><span class="v">'+fmt(K(k.id),k.u)+'</span></div>';
+  const cl=closure(k.id),inputs=[...cl.raw].map(r=>"<li>"+esc(INPUTS[r].n)+"<span>"+esc(INPUTS[r].t)+"</span></li>").join(""),built=[...cl.k].filter(x=>x!==k.id).map(x=>BY[x].abbr);
+  const fx=esc(k.f).replace(/([+−×÷=]|\(|\))/g,'<span class="o">$1</span>');
+  el.innerHTML='<div class="row"><input type="checkbox" aria-label="Select '+esc(k.name)+'" '+(sel.has(k.id)?"checked":"")+'>'+
+   '<div><div class="nm">'+esc(k.name)+'<small>'+esc(k.abbr)+'</small></div><div class="tags"><span class="tg '+(k.origin==="ALO"?"alo":"std")+'">'+(k.origin==="ALO"?"ALO Specific":"Standard")+'</span>'+(k.demo?'<span class="tg demo">Missing from Demo</span>':'')+'</div></div>'+'<div class="ai">'+(k.ai==="Yes"?'<span class="aiy">Yes</span>':k.ai?'<span class="aily">LY Seeded</span>':'<span class="ain">—</span>')+'</div>'+
+   '<div class="mode '+k.mode+'">'+MODE[k.mode]+'</div>'+
+   '<div class="fx mono">'+fx+'</div><button class="tog" aria-expanded="'+opened.has(k.id)+'" aria-label="Show details for '+esc(k.name)+'">'+(opened.has(k.id)?"−":"+")+'</button></div>'+
+   '<div class="detail"><div><h4>What it tells you</h4><p>'+esc(k.desc)+'</p>'+(k.note?'<p class="note">'+esc(k.note)+'</p>':'')+
+   
+   (k.alt.length?'<h4>Alternative definitions</h4><ul>'+k.alt.map(a=>'<li class="mono">'+esc(a)+'</li>').join("")+'</ul>':'')+
+   '<h4>Data inputs</h4><ul class="inlist">'+inputs+'</ul>'+(built.length?'<h4>Builds on</h4><div class="chips">'+esc(built.join(", "))+'</div>':'')+
+   '</div><div><h4>Worked example</h4><div class="ex mono">'+ex+'</div></div></div>';
+  const cb=el.querySelector("input"),tg=el.querySelector(".tog");
+  cb.onchange=()=>{cb.checked?sel.add(k.id):sel.delete(k.id);update();render()};
+  tg.onclick=()=>{const o=el.classList.toggle("open");o?opened.add(k.id):opened.delete(k.id);tg.setAttribute("aria-expanded",o);tg.textContent=o?"−":"+"};
+  return el;
+}
+function update(){$("#nSel").textContent=sel.size;$("#simBtn").disabled=!sel.size;{const b=$("#selAll");if(b){const all=sel.size===KPIS.length;b.textContent=all?"Clear all KPIs":"Select all KPIs";b.classList.toggle("on",all)}}$("#nVis").textContent=visible().length;$("#nTot").textContent=KPIS.length;$("#dl").disabled=!sel.size}
+
+/* ===== Excel ===== */
+/* ===== Invent data requirement mapping for client data feeds ===== */
+const DIMS=[
+ {k:"Sub-category",t:"product",c:"product_group_N_code / product_group_N_description (sub-category level of the hierarchy)",s:"Leggings"},
+ {k:"Market",t:"store",c:"country",s:"US"},
+ {k:"Channel",t:"transactional_sales / store",c:"sales_channel / channel_type",s:"Web"},
+ {k:"Seasonality",t:"product_store_seasonality / season",c:"season_code",s:"FA26"},
+ {k:"Week",t:"fiscal_calendar",c:"week_start_date",s:"2026-10-05"}];
+const FEEDS=[
+ {g:"S",on:["netSalesR","netSales"],k:"Net Sales $",t:"transactional_sales",c:"sales_revenue (net of sales_type = return)",s:340000},
+ {g:"S",on:["salesU","netSalesU"],k:"Net Sales Units",t:"transactional_sales",c:"sales_quantity (net of sales_type = return)",s:17000},
+ {g:"S",on:["netSalesCost","aucIn","auc"],k:"Net Sales Cost $",t:"transactional_sales",c:"cogs",s:142800},
+ {g:"S",on:["aucIn","auc"],k:"Average Unit Cost",t:"cost",c:"cogs",s:8.40},
+ {g:"S",on:["lySalesR","lySalesU","llySalesR","lyCompSalesR","lyContrPct","prevWkSalesR","curWkSalesR","curMoSalesR","prevMoSalesR","curWkSalesU"],k:"LY / LLY and prior-period Net Sales $ and Units",t:"transactional_sales",c:"sales_revenue, sales_quantity (history, aligned with fiscal_calendar)",s:310000},
+ {g:"S",on:["rtnPct","returnsUK","returnsUPct"],k:"Returns Units",t:"transactional_sales",c:"sales_quantity (sales_type = return)",s:1000},
+ {g:"S",on:["returnsK"],k:"Returns $",t:"transactional_sales",c:"sales_revenue (sales_type = return)",s:20000},
+ {g:"S",on:["returnsC"],k:"Returns Cost $",t:"transactional_sales",c:"cogs (sales_type = return)",s:8400},
+ {g:"S",on:["mdTotPct","totalMd"],k:"Total Markdown $",t:"transactional_sales",c:"discount",s:40000},
+ {g:"S",on:["mdPosR"],k:"POS / Promo Markdown $",t:"transactional_sales",c:"discount (sales_type = promo)",s:25000},
+ {g:"S",on:["mdPermR"],k:"Permanent Markdown $",t:"retail_price / price",c:"price_without_tax (original ticket price − current price)",s:"48.00 − 39.00"},
+ {g:"S",on:["mdSalesPct","mdSalesR"],k:"Markdown Sales $",t:"transactional_sales",c:"sales_revenue (sales_type = clearance)",s:47600},
+ {g:"S",on:["compSalesR","compSales"],k:"Comp Sales $",t:"transactional_sales / store",c:"sales_revenue; comp flag from opening_date, closing_date",s:300000},
+ {g:"S",on:["storeCount","lyStoreCount","strCnt"],k:"Store Count",t:"store",c:"is_active, opening_date, closing_date",s:50},
+ {g:"S",on:["sqft"],k:"Sales per Square Foot (selling area)",t:"store",c:"net_sales_area (area_unit)",s:3000},
+ {g:"S",on:["ccCount","lyCcCount","ccCnt"],k:"CC / SKU Count",t:"product",c:"option_code (distinct count)",s:120},
+ {g:"S",on:["webSalesR"],k:"Web Net Sales $",t:"ecom_sales",c:"sales_revenue",s:120000},
+ {g:"S",on:["sfsPct","sfsPctK"],k:"SFS / BOPIS % Share",t:"ecom_sales",c:"sales_quantity by fulfilling_location_type, fulfillment_type",s:"fulfilling_location_type = Store"},
+ {g:"I",on:["bopR","bop","eop"],k:"BOP / EOP Inventory $",t:"inventory / price",c:"inventory × price_without_tax",s:1000000},
+ {g:"I",on:["bopU","bopUnits","eopUnits","lyEopU"],k:"BOP / EOP Inventory Units",t:"inventory / inventory_warehouse",c:"inventory",s:50000},
+ {g:"I",on:["bopC","bopCost","eopCost"],k:"BOP / EOP Inventory Cost $",t:"inventory / inventory_warehouse",c:"stock_cost",s:420000},
+ {g:"I",on:["rcptU","rcptUnits","rcptTdU"],k:"Receipts Units (incl. receipts to-date)",t:"purchase_order_receipt",c:"quantity_received (by receipt_date)",s:14000},
+ {g:"I",on:["rcptC","rcptCost","rcptTdC","imu"],k:"Receipts Cost $",t:"purchase_order_receipt",c:"quantity_received × purch_unit_price",s:123000},
+ {g:"I",on:["rcptR","rcpt","rcptTdR"],k:"Receipts $",t:"purchase_order_receipt / price",c:"quantity_received × price_without_tax",s:300000},
+ {g:"I",on:["onOrderU","ooU"],k:"On Order Units",t:"purchase_order",c:"quantity_open (by estimated_arrival_date)",s:5600},
+ {g:"I",on:["onOrderC","ooC"],k:"On Order Cost $",t:"purchase_order / cost",c:"quantity_open × cogs",s:48000},
+ {g:"I",on:["onOrderR","ooR"],k:"On Order $",t:"purchase_order / price",c:"quantity_open × price_without_tax",s:120000},
+ {g:"I",on:["transferInU","xferInU"],k:"Transfers In Units",t:"goods_in_transit / executed_order",c:"quantity / executed_quantity (by destination_code)",s:500},
+ {g:"I",on:["transferOutU","xferOutU"],k:"Transfers Out Units",t:"goods_in_transit / executed_order",c:"quantity / executed_quantity (by source_code)",s:300},
+ {g:"I",on:["sfsFulU","sfsFulR","sfsFulC"],k:"SFS Inventory Fulfilment Units",t:"ecom_sales",c:"sales_quantity (fulfilling_location_type = Store, by fulfilling_location_code)",s:1500},
+ {g:"I",on:["markupR"],k:"Markup $ (price increases)",t:"price",c:"price_without_tax (upward price changes) × inventory",s:0},
+ {g:"I",on:["shrinkPctIn","shrinkPctK","shrinkUK"],k:"Shrink Units",t:"waste",c:"waste_amount (by waste_code / waste_reason = shrink)",s:340},
+ {g:"I",on:["shrinkPctIn","shrinkPctK","shrinkCost"],k:"Shrink Cost $",t:"waste",c:"waste_cost",s:2856},
+ {g:"I",on:["shrinkPctIn","shrinkPctK","shrink"],k:"Shrink $",t:"waste / price",c:"waste_amount × price_without_tax",s:6800}];
+
+function aiSeed(k){return k.ai||""}
+
+const NF={"bps":'0" bps"',"$":'"$"#,##0;[Red]-"$"#,##0',"$u":'"$"#,##0.00',"%":'0.0%',"x":'0.00"x"',"wks":'0.0" wks"',"mo":'0.00" mo"',"U":'#,##0',"#":'#,##0.####'};
+const UL={"bps":"Basis points","$":"$","$u":"$ per unit","%":"%","x":"Ratio","wks":"Weeks","mo":"Months","U":"Units","#":"Count"};
+const C_IN="FFE8EDFD",C_IN_FONT="FF2B3BB8",C_CALC="FFF4F4F2",C_HEAD="FF1C1C1A",C_MUT="FF76766F";
+function nfOf(k){if(!k.neg)return NF[k.u];return k.u==="U"?'#,##0;[Red]-#,##0':k.u==="%"?'0.0%;[Red]-0.0%':NF[k.u]}
+function head(ws,cols){ws.columns=cols.map(([h,w])=>({header:h,width:w}));const r=ws.getRow(1);r.font={bold:true,color:{argb:"FFFFFFFF"},name:"Calibri"};r.fill={type:"pattern",pattern:"solid",fgColor:{argb:C_HEAD}};r.alignment={vertical:"middle",wrapText:true};r.height=30;ws.views=[{state:"frozen",ySplit:1}]}
+function orderIds(ids){return KPIS.filter(k=>ids.has(k.id)).map(k=>k.id)}
+function buildRefs(selIds){
+  const need=new Set(),raw=new Set();selIds.forEach(id=>{const c=closure(id);c.k.forEach(x=>need.add(x));c.raw.forEach(x=>raw.add(x))});
+  return {need:orderIds(need),raw:Object.keys(INPUTS).filter(r=>raw.has(r))};
+}
+async function buildWorkbook(){
+  const selIds=orderIds(sel);
+  const wb=new ExcelJS.Workbook();wb.creator="ALO KPI Library";wb.calcProperties.fullCalcOnLoad=true;
+  /* --- tab 1: KPIs --- */
+  const ws1=wb.addWorksheet("Selected KPIs");
+  head(ws1,[["#",5],["Category",13],["KPI family",24],["KPI",32],["AI Forecast",11],["Abbrev",13],["Edit mode",18],["UOM",10],["Description",55],["Formula",52],["Alternative definitions",48],["Worked example",62],["Example result",14],["Data inputs required",50],["Builds on KPIs",36],["Notes",50],["Origin",13],["Missing from Demo",12]]);
+  ws1.getRow(1).getCell(5).alignment={horizontal:"center",vertical:"middle",wrapText:true};
+  const rawAll=new Map();
+  selIds.forEach((id,i)=>{const k=BY[id],c=closure(id);c.raw.forEach(r=>{if(!rawAll.has(r))rawAll.set(r,new Set());rawAll.get(r).add(k.name)});
+    const r=ws1.addRow([i+1,k.cat,k.fam,k.name,aiSeed(k),k.abbr,MODE[k.mode],UL[k.u],k.desc,k.f,k.alt.join("\n"),exText(k),K(id),[...c.raw].map(x=>INPUTS[x].n).join("\n"),[...c.k].filter(x=>x!==id).map(x=>BY[x].name).join("; "),k.note||"",k.origin==="ALO"?"ALO Specific":"Standard",k.demo?"Yes":""]);
+    r.getCell(13).numFmt=nfOf(k);if(k.ai)r.getCell(5).font={bold:true,color:{argb:k.ai==="Yes"?"FF1E6B3A":"FF2F5BD3"}};r.getCell(4).font={bold:true};r.alignment={vertical:"top",wrapText:true};
+    r.getCell(7).font={color:{argb:k.mode==="E"?"FFC2410C":k.mode==="B"?"FF0F7C86":C_MUT},bold:true}});
+  ws1.autoFilter={from:"A1",to:"R1"};
+  /* --- tab 2: data input feeds (Invent data requirements) --- */
+  const ws2=wb.addWorksheet("Data Inputs");
+  ws2.columns=[{width:40},{width:34},{width:58},{width:30}];
+  const feedNeed=new Set();selIds.forEach(id=>{const c=closure(id);c.k.forEach(x=>feedNeed.add(x));c.raw.forEach(x=>feedNeed.add(x))});
+  const used=f=>f.on.some(x=>feedNeed.has(x));
+  const title=(r,txt,sub)=>{const row=ws2.getRow(r);row.getCell(1).value=txt;row.getCell(1).font={bold:true,size:12};ws2.mergeCells(r,1,r,4);if(sub){const s=ws2.getRow(r+1);s.getCell(1).value=sub;s.getCell(1).font={italic:true,color:{argb:C_MUT}};ws2.mergeCells(r+1,1,r+1,4)}};
+  const hrow=r=>{const row=ws2.getRow(r);["KPI name","Invent Data Requirements Table name","Invent Data Requirements Column name","Sample value"].forEach((v,i)=>row.getCell(i+1).value=v);row.font={bold:true,color:{argb:"FFFFFFFF"}};row.fill={type:"pattern",pattern:"solid",fgColor:{argb:C_HEAD}};row.alignment={vertical:"middle",wrapText:true};row.height=30};
+  const put=(r,f)=>{const row=ws2.getRow(r);[f.k,f.t,f.c,f.s].forEach((v,i)=>row.getCell(i+1).value=v);row.alignment={vertical:"top",wrapText:true};if(typeof f.s==="number"){row.getCell(4).numFmt="#,##0.##";row.getCell(4).alignment={horizontal:"left",vertical:"top"}}
+    if(f.gap){row.getCell(2).font={bold:true,color:{argb:"FFC62828"}};row.getCell(3).font={color:{argb:"FFC62828"}}}};
+  let r2=1;
+  title(r2,"Data input feeds for the selected KPIs","Mapped to the Invent Data Format (invent_data_format v2.2.3). Only KPIs that need a client data feed are listed; planner entries, plan versions and parameters are not.");r2+=3;
+  const sales=FEEDS.filter(f=>f.g==="S"&&used(f)),inv=FEEDS.filter(f=>f.g==="I"&&used(f));
+  title(r2,"Planning grain dimensions","Every feed below is aggregated to these dimensions.");r2+=2;hrow(r2++);DIMS.forEach(f=>put(r2++,f));r2++;
+  if(sales.length){title(r2,"Sales feeds","Grain: Sub-category x Market x Channel x Seasonality x Week");r2+=2;hrow(r2++);sales.forEach(f=>put(r2++,f));r2++}
+  if(inv.length){title(r2,"Inventory feeds","Grain: Sub-category x Market x Seasonality x Week");r2+=2;hrow(r2++);inv.forEach(f=>put(r2++,f));r2++}
+  if(!sales.length&&!inv.length){ws2.getRow(r2).getCell(1).value="The selected KPIs are calculated from planner entries and plan versions only; no client data feed is required.";ws2.mergeCells(r2,1,r2,4)}
+  /* --- tab 3: simulation --- */
+  const ws=wb.addWorksheet("Simulation");
+  ws.columns=[{width:44},{width:16},{width:11},{width:20},{width:10},{width:12},{width:15},{width:70}];
+  ws.getCell("A1").value="KPI simulation";ws.getCell("A1").font={bold:true,size:14};
+  ws.getCell("A2").value="Change the blue input cells. Every KPI below is a live Excel formula and recalculates. Edit mode shows how each KPI behaves in a planning system.";ws.getCell("A2").font={color:{argb:C_MUT}};
+  ws.mergeCells("A2:H2");
+  const L=[["Input cell (edit)",C_IN],["Calculated cell (formula)",C_CALC]];L.forEach(([t,c],i)=>{const cell=ws.getCell(3,1+i*2);cell.value=t;cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:c}};if(i===0)cell.font={color:{argb:C_IN_FONT},bold:true}});
+  const {need,raw}=buildRefs(selIds);
+  let r=5;const hdr=(cells)=>{const row=ws.getRow(r);cells.forEach((v,i)=>row.getCell(i+1).value=v);row.font={bold:true,color:{argb:"FFFFFFFF"}};row.fill={type:"pattern",pattern:"solid",fgColor:{argb:C_HEAD}};r++};
+  const sect=(t)=>{const c=ws.getCell(r,1);c.value=t;c.font={bold:true,size:12};r++};
+  sect("1. Inputs");hdr(["Input","Value","UOM","Type","","","","Description"]);
+  const ref={};let wkStart=null;
+  raw.forEach(id=>{const d=INPUTS[id];
+    if(id==="fwdWeekly"){wkStart=r;V.fwdWeekly.forEach((w,i)=>{const row=ws.getRow(r);row.getCell(1).value="Future week "+(i+1)+" planned sales $";const c=row.getCell(2);c.value=w;c.numFmt=NF["$"];c.fill={type:"pattern",pattern:"solid",fgColor:{argb:C_IN}};c.font={color:{argb:C_IN_FONT},bold:true};
+        row.getCell(3).value="$";row.getCell(4).value=d.t;const cc=row.getCell(5);cc.value={formula:i?"E"+(r-1)+"+B"+r:"B"+r,result:sum(V.fwdWeekly.slice(0,i+1))};cc.numFmt=NF["$"];cc.fill={type:"pattern",pattern:"solid",fgColor:{argb:C_CALC}};
+        row.getCell(8).value=i?"":"Column E = cumulative (helper for forward cover and target EOP)";r++});
+      ref.WK="$B$"+wkStart+":$B$"+(r-1);ref.WKC="$E$"+wkStart+":$E$"+(r-1);ref.WK1="$B$"+wkStart;return}
+    const row=ws.getRow(r);row.getCell(1).value=d.n;const c=row.getCell(2);c.value=V[id];c.numFmt=NF[d.u]||NF["#"];
+    c.fill={type:"pattern",pattern:"solid",fgColor:{argb:C_IN}};c.font={color:{argb:C_IN_FONT},bold:true};
+    row.getCell(3).value=d.u;row.getCell(4).value=d.t;row.getCell(8).value=d.d;ref[id]="$B$"+r;r++});
+  r++;sect("2. KPIs");hdr(["KPI","Value","UOM","Edit mode","Missing from Demo","Role","Origin","Formula"]);
+  const kStart=r;need.forEach((id,i)=>{ref[id]="$B$"+(kStart+i)});
+  need.forEach(id=>{const k=BY[id],row=ws.getRow(r);
+    const f=k.x.replace(/\{([A-Za-z0-9]+)\}/g,(m,t)=>{if(!(t in ref))throw new Error("ref "+t+" in "+id);return ref[t]});
+    row.getCell(1).value=k.name;const c=row.getCell(2);c.value={formula:f,result:K(id)};c.numFmt=nfOf(k);c.fill={type:"pattern",pattern:"solid",fgColor:{argb:C_CALC}};c.font={bold:sel.has(id)};
+    row.getCell(3).value=UL[k.u];const m=row.getCell(4);m.value=MODE[k.mode];m.font={bold:true,color:{argb:k.mode==="E"?"FFC2410C":k.mode==="B"?"FF0F7C86":C_MUT}};
+    row.getCell(5).value=k.demo?"Yes":"";row.getCell(6).value=sel.has(id)?"Selected":"Supporting";if(!sel.has(id))row.getCell(6).font={color:{argb:C_MUT}};
+    row.getCell(7).value=k.origin==="ALO"?"ALO Specific":"Standard";row.getCell(8).value=k.f;r++});
+  r++;sect("How to read edit mode");
+  [["Editable","The KPI is a planner entry. Change its input cell above to simulate it."],["Editable + Calculated","Calculated here from the inputs. In a planning system planners can also type it directly and the related measures back-solve."],["Calculated","Always derived from other measures; read-only in planning."],["Supporting","Not selected, but needed to calculate a selected KPI."]]
+    .forEach(([a,b])=>{ws.getCell(r,1).value=a;ws.getCell(r,1).font={bold:true};ws.getCell(r,2).value=b;ws.mergeCells(r,2,r,8);r++});
+  ws.views=[{state:"frozen",ySplit:4}];
+  return wb.xlsx.writeBuffer();
+}
+let downloads=null;
+(async()=>{try{if(window.claude&&window.claude.use)downloads=await window.claude.use("downloads")}catch(e){downloads=null}})();
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2600)}
+async function doDownload(){
+  if(typeof ExcelJS==="undefined"){toast("The Excel library did not load. Reload the page and try again.");return}
+  const buf=await buildWorkbook(),name="ALO_KPI_Selection.xlsx";
+  if(downloads){try{await downloads.save({filename:name,data:new Uint8Array(buf)});toast("Saved "+name)}catch(e){if(e&&e.code==="declined")return;toast(e&&e.code==="rate_limited"?"A save prompt is already open.":"This view can't save files. Open the page in claude.ai to download.")}return}
+  try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast("Downloading "+name)}catch(e){toast("Download isn't available in this view.")}
+}
+$("#q").addEventListener("input",e=>{q=e.target.value;render()});
+$("#selAll").onclick=()=>{const all=sel.size===KPIS.length;if(all)sel.clear();else KPIS.forEach(k=>sel.add(k.id));update();render()};
+$("#selVis").onclick=()=>{visible().forEach(k=>sel.add(k.id));update();render()};
+$("#clr").onclick=()=>{sel.clear();update();render()};
+$("#dl").onclick=doDownload;
+render();update();
+const setHH=()=>document.documentElement.style.setProperty("--hh",document.getElementById("top").offsetHeight+"px");setHH();new ResizeObserver(setHH).observe(document.getElementById("top"));
+
+/* ===== live in-page simulation ===== */
+let SIM=null;
+function simOpen(){
+  const ids=orderIds(sel);if(!ids.length)return;
+  const need=new Set(),raw=new Set();ids.forEach(id=>{const c=closure(id);c.k.forEach(x=>need.add(x));c.raw.forEach(x=>raw.add(x))});
+  const ordered=orderIds(need);SIM={ids,need:ordered.filter(x=>sel.has(x)).concat(ordered.filter(x=>!sel.has(x))),raw:Object.keys(INPUTS).filter(r=>raw.has(r)),S:JSON.parse(JSON.stringify(V))};
+  const box=$("#simIn");box.innerHTML="";
+  SIM.raw.forEach(r=>{const d=INPUTS[r];
+    if(Array.isArray(V[r])){V[r].forEach((w,i)=>box.appendChild(simField(r,i,d.n.replace(/\(.*\)/,"").trim()+" – week "+(i+1),"$")));return}
+    box.appendChild(simField(r,null,d.n,d.u))});
+  simCalc();$("#simWrap").classList.add("open");document.body.style.overflow="hidden";
+  const f=box.querySelector("input");if(f)f.focus();
+}
+function toShow(v,u){return u==="%"?+(v*100).toFixed(4):+(+v).toFixed(4)}
+function fromShow(v,u){const n=parseFloat(String(v).replace(/[,$\s]/g,""));if(!isFinite(n))return null;return u==="%"?n/100:n}
+function simField(r,i,label,u){
+  const base=i===null?V[r]:V[r][i];
+  const row=document.createElement("div");row.className="sin";
+  const id="si_"+r+(i===null?"":"_"+i);
+  row.innerHTML='<label for="'+id+'">'+esc(label)+'<small>'+(u==="%"?"%":u==="$"?"$":u==="U"?"units":u==="x"?"ratio":"value")+' · base '+esc(u==="%"?toShow(base,u)+"%":(+base).toLocaleString("en-US",{maximumFractionDigits:4}))+'</small></label><input id="'+id+'" inputmode="decimal" value="'+toShow(base,u)+'">';
+  const inp=row.querySelector("input");
+  inp.addEventListener("input",()=>{const v=fromShow(inp.value,u);if(v===null)return;if(i===null)SIM.S[r]=v;else SIM.S[r][i]=v;inp.classList.toggle("chg",Math.abs(v-base)>1e-9);simCalc()});
+  return row;
+}
+function simCalc(){
+  const Kb=K,Ks=evaluator(SIM.S),out=$("#simOut");let html="";
+  SIM.need.forEach(id=>{const k=BY[id];let b,s;try{b=Kb(id);s=Ks(id)}catch(e){return}
+    const moved=Math.abs(s-b)>1e-9*Math.max(1,Math.abs(b));
+    let dl="";if(moved){const d=s-b;dl='<span class="dlt '+(d>0?"up":"dn")+'">'+(d>0?"+":"−")+(k.u==="%"?(Math.abs(d)*100).toFixed(2)+" pts":fmt(Math.abs(d),k.u))+'</span>'}
+    html+='<tr class="'+(sel.has(id)?"":"sup ")+(moved?"moved":"")+'"><td>'+esc(k.name)+(sel.has(id)?"":' <small>(supporting)</small>')+'</td><td><span class="mode '+k.mode+'">'+MODE[k.mode]+'</span></td><td class="num">'+fmt(b,k.u)+'</td><td class="num now">'+(isFinite(s)?fmt(s,k.u):"—")+'</td><td class="num">'+dl+'</td></tr>'});
+  out.innerHTML=html;
+}
+function simClose(){$("#simWrap").classList.remove("open");document.body.style.overflow="";$("#simBtn").focus()}
+$("#simBtn").onclick=simOpen;$("#simClose").onclick=simClose;
+$("#simReset").onclick=()=>{if(SIM)simOpen()};
+$("#simWrap").addEventListener("click",e=>{if(e.target.id==="simWrap")simClose()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#simWrap").classList.contains("open"))simClose()});
+update();
+</script>
+</body></html>
